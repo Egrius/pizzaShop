@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: egor
+      changes:
+        - sqlFile:
+            path: sql/V1_init.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+            endDelimiter: ;
