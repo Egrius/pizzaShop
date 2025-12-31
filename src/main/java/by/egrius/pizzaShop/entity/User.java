@@ -2,6 +2,7 @@ package by.egrius.pizzaShop.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -39,6 +40,11 @@ public class User {
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
 
+    @PreUpdate
+    public void preUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+
     public static User createUser(String fullName, String email, String phone, String passwordHash) {
         User user = new User();
         user.fullName = fullName.trim();
@@ -46,6 +52,18 @@ public class User {
         user.phone = phone.trim();
         user.passwordHash = passwordHash;
         return user;
+    }
+
+    public void changeFullName(String newName) {
+        this.fullName = newName.trim();
+    }
+
+    public void changePhone(String newPhone) {
+        this.phone = newPhone.trim();
+    }
+
+    public void changePassword(String rawPassword, PasswordEncoder encoder) {
+        this.passwordHash = encoder.encode(rawPassword);
     }
 
     @Override

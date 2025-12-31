@@ -11,3 +11,7 @@ public class PizzaShopApplication {
 	}
 
 }
+
+/*
+	Подумать над триггером для UPDATE на уровне БД
+ */
