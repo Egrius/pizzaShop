@@ -1,15 +1,15 @@
-package by.egrius.pizzaShop.service.unit;
+package by.egrius.pizzaShop.unit.service;
 
-import by.egrius.pizzaShop.dto.ChangePasswordDto;
-import by.egrius.pizzaShop.dto.UserCreateDto;
-import by.egrius.pizzaShop.dto.UserReadDto;
-import by.egrius.pizzaShop.dto.UserUpdateDto;
+import by.egrius.pizzaShop.dto.user.ChangeFullNameDto;
+import by.egrius.pizzaShop.dto.user.ChangePasswordDto;
+import by.egrius.pizzaShop.dto.user.UserCreateDto;
+import by.egrius.pizzaShop.dto.user.UserReadDto;
 import by.egrius.pizzaShop.entity.User;
 import by.egrius.pizzaShop.entity.UserRole;
 import by.egrius.pizzaShop.exception.InvalidPasswordException;
 import by.egrius.pizzaShop.exception.UserAlreadyExistsException;
 import by.egrius.pizzaShop.exception.UserNotFoundException;
-import by.egrius.pizzaShop.mapper.UserReadMapper;
+import by.egrius.pizzaShop.mapper.user.UserReadMapper;
 import by.egrius.pizzaShop.repository.UserRepository;
 import by.egrius.pizzaShop.service.UserService;
 import org.junit.jupiter.api.Nested;
@@ -201,7 +201,7 @@ class UserServiceUnitTest {
     @Nested
     class UpdateUserTests {
         @Test
-        void updateUserShouldUpdateAndReturnCorrectDto() {
+        void changeFullNameShouldUpdateAndReturnCorrectDto() {
 
             // Given
             Long userId = 1L;
@@ -219,7 +219,7 @@ class UserServiceUnitTest {
                     encodedPassword
             );
 
-            UserUpdateDto userUpdateDto = new UserUpdateDto(updatedFullName, updatedPhone);
+            ChangeFullNameDto userUpdateDto = new ChangeFullNameDto(updatedFullName);
 
             // When
             when(userRepository.findById(userId)).thenReturn(Optional.of(userToUpdate));
@@ -236,11 +236,10 @@ class UserServiceUnitTest {
             when(userReadMapper.map(userToUpdate)).thenReturn(expectedDto);
 
             // Then
-            UserReadDto actualResult = userService.updateUser(userId, userUpdateDto);
+            UserReadDto actualResult = userService.changeFullName(userId, userUpdateDto);
 
             assertThat(actualResult).isEqualTo(expectedDto);
             assertThat(userToUpdate.getFullName()).isEqualTo(updatedFullName);
-            assertThat(userToUpdate.getPhone()).isEqualTo(updatedPhone);
 
             // Verify
             verify(userRepository).findById(userId);
@@ -248,11 +247,11 @@ class UserServiceUnitTest {
         }
 
         @Test
-        void updateUserShouldThrowWhenUserNotFound() {
+        void changeFullNameShouldThrowWhenUserNotFound() {
 
             // Given
             Long nonExistentUserId = 999L;
-            UserUpdateDto updateDto = new UserUpdateDto("New Name", "+375290000000");
+            ChangeFullNameDto updateDto = new ChangeFullNameDto("New Name");
 
             // When
             when(userRepository.findById(nonExistentUserId)).thenReturn(Optional.empty());
@@ -260,7 +259,7 @@ class UserServiceUnitTest {
 
             // Then
             assertThrows(UserNotFoundException.class,
-                    () -> userService.updateUser(nonExistentUserId, updateDto));
+                    () -> userService.changeFullName(nonExistentUserId, updateDto));
 
 
             // Verify
@@ -284,7 +283,7 @@ class UserServiceUnitTest {
             );
 
             // null в fullName, только телефон обновляется
-            UserUpdateDto updateDto = new UserUpdateDto(null, "+375297654321");
+            ChangeFullNameDto updateDto = new ChangeFullNameDto("");
 
             // When
             when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
@@ -301,15 +300,14 @@ class UserServiceUnitTest {
             when(userReadMapper.map(existingUser)).thenReturn(expectedDto);
 
             // Then
-            UserReadDto result = userService.updateUser(userId, updateDto);
+            UserReadDto result = userService.changeFullName(userId, updateDto);
 
             assertThat(result).isEqualTo(expectedDto);
             assertThat(existingUser.getFullName()).isEqualTo("Егор Егорович");
-            assertThat(existingUser.getPhone()).isEqualTo("+375297654321");
         }
 
         @Test
-        void updateUserShouldNotUpdateWhenNewDataEqualsOld() {
+        void changeFullNameShouldNotUpdateWhenNewDataEqualsOld() {
             // Given
             Long userId = 1L;
             String email = "test@email.com";
@@ -317,13 +315,13 @@ class UserServiceUnitTest {
 
             User user = User.createUser("Егор", email, phone, "password");
 
-            UserUpdateDto sameDataDto = new UserUpdateDto("Егор", "+375291234567");
+            ChangeFullNameDto sameDataDto = new ChangeFullNameDto("Егор" );
 
             when(userRepository.findById(userId)).thenReturn(Optional.of(user));
             when(userReadMapper.map(user)).thenReturn(mock(UserReadDto.class));
 
             // When
-            userService.updateUser(userId, sameDataDto);
+            userService.changeFullName(userId, sameDataDto);
 
             // Then - не должно быть изменений
             assertThat(user.getFullName()).isEqualTo("Егор");
@@ -334,18 +332,18 @@ class UserServiceUnitTest {
         }
 
         @Test
-        void updateUserShouldHandleEmptyStrings() {
+        void changeFullNameShouldHandleEmptyStrings() {
             // Given
             Long userId = 1L;
             User user = User.createUser("Егор", "email@test.com", "+375291234567", "pass");
 
-            UserUpdateDto emptyDto = new UserUpdateDto("", "");
+            ChangeFullNameDto emptyDto = new ChangeFullNameDto("");
 
             when(userRepository.findById(userId)).thenReturn(Optional.of(user));
             when(userReadMapper.map(user)).thenReturn(mock(UserReadDto.class));
 
             // When
-            UserReadDto result = userService.updateUser(userId, emptyDto);
+            UserReadDto result = userService.changeFullName(userId, emptyDto);
 
             // Then
             assertThat(user.getFullName()).isEqualTo("Егор");
@@ -367,6 +365,7 @@ class UserServiceUnitTest {
             User user = mock(User.class);
             ChangePasswordDto changePasswordDto = new ChangePasswordDto(
                     currentPassword,
+                    newPassword,
                     newPassword
             );
 
@@ -388,6 +387,7 @@ class UserServiceUnitTest {
             // Given
             ChangePasswordDto changePasswordDto = new ChangePasswordDto(
                     currentPassword,
+                    newPassword,
                     newPassword
             );
 
@@ -408,6 +408,7 @@ class UserServiceUnitTest {
             User user = mock(User.class);
             ChangePasswordDto changePasswordDto = new ChangePasswordDto(
                     "wrongPassword",
+                    newPassword,
                     newPassword
             );
 
@@ -418,7 +419,7 @@ class UserServiceUnitTest {
             // When & Then
             assertThatThrownBy(() -> userService.changePassword(userId, changePasswordDto))
                     .isInstanceOf(InvalidPasswordException.class)
-                    .hasMessageContaining("Текущий пароль неверен");
+                    .hasMessageContaining("текущий пароль неверен");
 
             verify(userRepository).findById(userId);
             verify(passwordEncoder).matches("wrongPassword", encodedCurrentPassword);

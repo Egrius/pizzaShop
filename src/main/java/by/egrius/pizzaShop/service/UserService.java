@@ -1,14 +1,14 @@
 package by.egrius.pizzaShop.service;
 
-import by.egrius.pizzaShop.dto.ChangePasswordDto;
-import by.egrius.pizzaShop.dto.UserCreateDto;
-import by.egrius.pizzaShop.dto.UserReadDto;
-import by.egrius.pizzaShop.dto.UserUpdateDto;
+import by.egrius.pizzaShop.dto.user.ChangeFullNameDto;
+import by.egrius.pizzaShop.dto.user.ChangePasswordDto;
+import by.egrius.pizzaShop.dto.user.UserCreateDto;
+import by.egrius.pizzaShop.dto.user.UserReadDto;
 import by.egrius.pizzaShop.entity.User;
 import by.egrius.pizzaShop.exception.InvalidPasswordException;
 import by.egrius.pizzaShop.exception.UserAlreadyExistsException;
 import by.egrius.pizzaShop.exception.UserNotFoundException;
-import by.egrius.pizzaShop.mapper.UserReadMapper;
+import by.egrius.pizzaShop.mapper.user.UserReadMapper;
 import by.egrius.pizzaShop.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,10 +29,9 @@ public class UserService {
     private final UserReadMapper userReadMapper;
     private final PasswordEncoder passwordEncoder;
 
-    private String buildChangeLog(boolean nameChanged, boolean phoneChanged, User user) {
+    private String buildChangeLog(boolean nameChanged, User user) {
         List<String> changes = new ArrayList<>();
         if (nameChanged) changes.add("Имя: " + user.getFullName());
-        if (phoneChanged) changes.add("Телефон: " + user.getPhone());
         return String.join(", ", changes);
     }
 
@@ -73,11 +72,11 @@ public class UserService {
     }
 
     @Transactional
-    public UserReadDto updateUser(Long userId, UserUpdateDto updateDto) {
+    public UserReadDto changeFullName(Long userId, ChangeFullNameDto updateDto) {
+
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("Пользователь не найден"));
 
         boolean nameChanged = false;
-        boolean phoneChanged = false;
 
         if (!updateDto.newFullName().isEmpty() &&
                 !updateDto.newFullName().equals(user.getFullName())) {
@@ -85,17 +84,10 @@ public class UserService {
             nameChanged = true;
         }
 
-        if (!updateDto.newFullName().isEmpty() &&
-                !updateDto.newPhone().equals(user.getPhone())) {
-            user.changePhone(updateDto.newPhone());
-            phoneChanged = true;
-        }
-
-
-        if (nameChanged || phoneChanged) {
+        if (nameChanged) {
             log.info("Обновлён пользователь с ID: {} - {}",
                     user.getId(),
-                    buildChangeLog(nameChanged, phoneChanged, user));
+                    buildChangeLog(nameChanged, user));
         }
 
         return userReadMapper.map(user);
@@ -107,10 +99,10 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFoundException("Пользователь не найден"));
 
         if (!passwordEncoder.matches(changePasswordDto.currentPassword(), user.getPasswordHash())) {
-            throw new InvalidPasswordException("Текущий пароль неверен");
+            throw new InvalidPasswordException("Введённый текущий пароль неверен");
         }
 
-        user.changePassword(changePasswordDto.newRawPassword(), passwordEncoder);
+        user.changePassword(changePasswordDto.newPassword(), passwordEncoder);
 
         log.info("Пароль пользователя с ID: {} изменён", userId);
     }

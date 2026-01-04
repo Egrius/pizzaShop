@@ -8,6 +8,8 @@ import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Table(name = "ingredients")
@@ -21,20 +23,29 @@ public class Ingredient {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 100)
     private String name;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String description;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
-    @Column(name = "is_available", nullable = false)
+    @Column(name = "is_available")
     private boolean available = true;
 
     @Column(name = "created_at", updatable = false, insertable = false)
     private LocalDateTime createdAt;
+
+    public static Ingredient create(String name, String description, BigDecimal price, boolean available) {
+        Ingredient ingredient = new Ingredient();
+        ingredient.setName(name);
+        ingredient.setDescription(description);
+        ingredient.setPrice(price);
+        ingredient.setAvailable(available);
+        return ingredient;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -46,5 +57,10 @@ public class Ingredient {
     @Override
     public int hashCode() {
         return Objects.hashCode(id);
+    }
+
+    @PrePersist
+    private void setCreatedAt() {
+        this.createdAt = LocalDateTime.now();
     }
 }

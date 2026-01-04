@@ -1,5 +1,6 @@
 package by.egrius.pizzaShop.entity;
 
+import by.egrius.pizzaShop.entity.converter.AddressConverter;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -37,9 +38,11 @@ public class Order {
     @Column(name = "total_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalPrice;
 
-    @Column(name = "delivery_address", nullable = false, columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
-    private String deliveryAddress;
+    @Column(name = "delivery_address", nullable = false)
+    //columnDefinition = "jsonb"
+    @Convert(converter = AddressConverter.class)
+    private Address deliveryAddress;
 
     @Column(name = "customer_notes")
     private String customerNotes;

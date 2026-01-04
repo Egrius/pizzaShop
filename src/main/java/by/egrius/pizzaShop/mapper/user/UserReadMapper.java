@@ -1,7 +1,8 @@
-package by.egrius.pizzaShop.mapper;
+package by.egrius.pizzaShop.mapper.user;
 
-import by.egrius.pizzaShop.dto.UserReadDto;
+import by.egrius.pizzaShop.dto.user.UserReadDto;
 import by.egrius.pizzaShop.entity.User;
+import by.egrius.pizzaShop.mapper.BaseMapper;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -13,7 +14,7 @@ public class UserReadMapper implements BaseMapper<User, UserReadDto> {
                 object.getFullName(),
                 object.getEmail(),
                 object.getPhone(),
-                object.getRole().getName(),
+                object.getRole(),
                 object.getCreatedAt(),
                 object.getUpdatedAt()
         );

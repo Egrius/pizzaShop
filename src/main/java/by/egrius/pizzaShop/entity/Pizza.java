@@ -1,12 +1,10 @@
 package by.egrius.pizzaShop.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -21,24 +19,25 @@ public class Pizza {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "image_url")
+    @Column(name = "image_url", length = 500)
     private String imageUrl;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 50)
     private String category;
 
     @Column(name = "is_available")
     private boolean available = true;
 
+    @Column(name = "cooking_time_minutes")
     private Integer cookingTimeMinutes = 15;
 
-    @Column(updatable = false)
+    @Column(name = "created_at", updatable = false, insertable = false)
     private LocalDateTime createdAt;
 
     @ManyToMany
@@ -49,15 +48,33 @@ public class Pizza {
     )
     private List<Ingredient> ingredients;
 
+    public static Pizza create(String name, String description, String category,
+                               String imageUrl, boolean available,
+                               Integer cookingTimeMinutes) {
+        Pizza pizza = new Pizza();
+        pizza.setName(name);
+        pizza.setDescription(description);
+        pizza.setCategory(category);
+        pizza.setImageUrl(imageUrl);
+        pizza.setAvailable(available);
+        pizza.setCookingTimeMinutes(cookingTimeMinutes != null ? cookingTimeMinutes : 15);
+        return pizza;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Pizza pizza)) return false;
-        return Objects.equals(id, pizza.id);
+        return Objects.equals(getId(), pizza.getId());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(id);
+        return Objects.hash(getId());
+    }
+
+    @PrePersist
+    private void setCreatedAt() {
+        this.createdAt = LocalDateTime.now();
     }
 }

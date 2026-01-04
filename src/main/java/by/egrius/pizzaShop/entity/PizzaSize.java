@@ -13,7 +13,7 @@ import java.util.Objects;
 @Table(name = "pizza_sizes")
 @Getter
 @Setter
-@ToString
+@ToString(exclude = "pizza")
 @NoArgsConstructor
 public class PizzaSize {
     @Id
@@ -24,20 +24,20 @@ public class PizzaSize {
     @JoinColumn(name = "pizza_id", nullable = false)
     private Pizza pizza;
 
-    @Column(name = "size_name")
+    @Column(name = "size_name", nullable = false, length = 20)
     private String sizeName;
 
-    @Column(name = "diameter_cm")
+    @Column(name = "diameter_cm", nullable = false)
     private Integer diameterCm;
 
-    @Column(name = "weight_grams")
+    @Column(name = "weight_grams", nullable = false)
     private Integer weightGrams;
 
-    @Column(precision = 10, scale = 2)
+    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
     @Column(name = "is_available")
-    private boolean available;
+    private Boolean available = true;
 
     @Override
     public boolean equals(Object o) {

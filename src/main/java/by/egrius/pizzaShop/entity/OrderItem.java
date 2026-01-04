@@ -46,6 +46,17 @@ public class OrderItem {
             insertable = false, updatable = false)
     private BigDecimal subTotal;
 
+    @PrePersist
+    @PreUpdate
+    public void calculateSubTotal() {
+        if (unitPrice != null && quantity != null) {
+            this.subTotal = unitPrice.multiply(BigDecimal.valueOf(quantity));
+        }
+        if (addedAt == null) {
+            addedAt = LocalDateTime.now();
+        }
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

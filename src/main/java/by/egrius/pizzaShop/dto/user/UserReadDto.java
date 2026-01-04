@@ -1,4 +1,4 @@
-package by.egrius.pizzaShop.dto;
+package by.egrius.pizzaShop.dto.user;
 
 import by.egrius.pizzaShop.entity.UserRole;
 
