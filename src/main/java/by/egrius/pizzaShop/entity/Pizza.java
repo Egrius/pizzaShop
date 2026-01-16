@@ -1,28 +1,31 @@
 package by.egrius.pizzaShop.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Entity
 @Table(name = "pizzas")
-@Getter
 @Setter
-@ToString(exclude = {"ingredients"})
+@Getter
+@ToString(exclude = {"pizzaIngredients", "pizzaSizes"})
 @NoArgsConstructor
 public class Pizza {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "pizza_seq")
+    @SequenceGenerator(name = "pizza_seq", sequenceName = "pizzas_id_seq", allocationSize = 1)
     private Long id;
 
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    //, columnDefinition = "TEXT"
+    @Column(nullable = false)
     private String description;
 
     @Column(name = "image_url", length = 500)
@@ -40,13 +43,14 @@ public class Pizza {
     @Column(name = "created_at", updatable = false, insertable = false)
     private LocalDateTime createdAt;
 
-    @ManyToMany
-    @JoinTable(
-            name = "pizza_ingredients",
-            joinColumns = @JoinColumn(name = "pizza_id"),
-            inverseJoinColumns = @JoinColumn(name = "ingredient_id")
-    )
-    private List<Ingredient> ingredients;
+    @OneToMany(mappedBy = "pizza", cascade = CascadeType.PERSIST)
+    private Set<PizzaIngredient> pizzaIngredients = new HashSet<>();
+
+    @OneToMany(mappedBy = "pizza", cascade = CascadeType.PERSIST)
+    private Set<PizzaSize> pizzaSizes = new HashSet<>();
+
+    @Version
+    private Long version;
 
     public static Pizza create(String name, String description, String category,
                                String imageUrl, boolean available,
@@ -77,4 +81,5 @@ public class Pizza {
     private void setCreatedAt() {
         this.createdAt = LocalDateTime.now();
     }
+
 }

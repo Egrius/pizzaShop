@@ -23,6 +23,7 @@ dependencies {
 	// H2 для тестов
 	testRuntimeOnly 'com.h2database:h2'
 
+
 	// Валидация
 	implementation("org.springframework.boot:spring-boot-starter-validation:4.0.1")
 

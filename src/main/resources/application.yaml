@@ -13,5 +13,5 @@ spring:
     password: pizza123
     driverClassName: org.postgresql.Driver
   liquibase:
-    enabled: true
+    enabled: false
     change-log: classpath:db/changelog/db.changelog-master.yaml

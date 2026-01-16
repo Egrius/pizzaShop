@@ -17,8 +17,6 @@ public class PizzaCreateMapper implements BaseMapper<PizzaCreateDto, Pizza> {
 
     @Override
     public Pizza map(PizzaCreateDto object) {
-
-
         return Pizza.create(
                 object.name(),
                 object.description(),
