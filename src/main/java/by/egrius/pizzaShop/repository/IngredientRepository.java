@@ -11,8 +11,10 @@ import java.util.List;
 @Repository
 public interface IngredientRepository extends JpaRepository<Ingredient, Long> {
 
-    @Query("SELECT COUNT(pi) FROM PizzaIngredient pi WHERE pi.ingredient.id = :ingredientId")
-    long countPizzaUses(@Param("ingredientId") Long ingredientId);
+
+
+    @Query("SELECT COUNT(i) FROM Ingredient i WHERE i.name = :name")
+    long countByName(@Param("name") String name);
 
     boolean existsByName(String name);
 }

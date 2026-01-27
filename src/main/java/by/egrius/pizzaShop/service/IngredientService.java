@@ -9,16 +9,18 @@ import by.egrius.pizzaShop.mapper.ingredient.IngredientCreateMapper;
 import by.egrius.pizzaShop.mapper.ingredient.IngredientReadMapper;
 import by.egrius.pizzaShop.mapper.ingredient.IngredientUpdateMapper;
 import by.egrius.pizzaShop.repository.IngredientRepository;
+import by.egrius.pizzaShop.repository.PizzaIngredientRepository;
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -28,17 +30,16 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 public class IngredientService {
+    private final PizzaIngredientRepository pizzaIngredientRepository;
     private final IngredientRepository ingredientRepository;
     private final IngredientReadMapper ingredientReadMapper;
     private final IngredientCreateMapper ingredientCreateMapper;
     private final IngredientUpdateMapper ingredientUpdateMapper;
+    private final PizzaPriceRecalculationService pizzaPriceRecalculationService;
+    private final TransactionTemplate transactionTemplate;
+    private final EntityManager entityManager;
 
-    // TODO добавление
-    // TODO обновление
-    // TODO удаление
-
-    public Page<IngredientReadDto> getAllIngredients(int pageNumber, int pageSize) {
-        Pageable pageable = PageRequest.of(pageNumber,pageSize);
+    public Page<IngredientReadDto> getAllIngredients(Pageable pageable) {
         return ingredientRepository.findAll(pageable).map(ingredientReadMapper::map);
     }
 
@@ -98,13 +99,27 @@ public class IngredientService {
         Ingredient ingredientToUpdate = ingredientRepository.findById(id).orElseThrow(
                 () -> new EntityNotFoundException("Ингредиент с id - " + id + " не найден в БД"));
 
+        BigDecimal priceBefore = ingredientToUpdate.getPrice();
         ingredientUpdateMapper.map(ingredientUpdateDto, ingredientToUpdate);
 
-        Ingredient updatedIngredient = ingredientRepository.save(ingredientToUpdate);
+        // Ingredient updatedIngredient = ingredientRepository.save(ingredientToUpdate);
+
+        entityManager.flush();
 
         log.info("Ингредиент с id {} успешно обновлен", id);
 
-        return ingredientReadMapper.map(updatedIngredient);
+        BigDecimal priceAfter = ingredientToUpdate.getPrice();
+
+        if (priceBefore.compareTo(priceAfter) != 0) {
+            log.info("Цена изменилась ({} -> {}), запускаем перерасчет",
+                    priceBefore, priceAfter);
+
+            entityManager.clear();
+
+            pizzaPriceRecalculationService.recalculatePricesForIngredientAsync(id);
+        }
+
+        return ingredientReadMapper.map(ingredientToUpdate);
     }
 
     @Transactional
@@ -115,7 +130,7 @@ public class IngredientService {
                 .orElseThrow(() -> new EntityNotFoundException(
                         String.format("Ингредиент для удаления с id %d не найден в БД", id)));
 
-        long pizzaUses = ingredientRepository.countPizzaUses(id);
+        long pizzaUses =  pizzaIngredientRepository.countPizzaUses(id);
 
         if(pizzaUses > 0) {
             log.warn("Попытка удалить ингредиент {}, используемый в {} пиццах",
@@ -125,13 +140,12 @@ public class IngredientService {
                             ingredientToDelete.getName(), pizzaUses));
         }
 
-        Long ingredientId = ingredientToDelete.getId();
         String ingredientName = ingredientToDelete.getName();
 
-        log.info("Найден ингредиент для удаления, id - {}, название - {}", ingredientId, ingredientName);
+        log.info("Найден ингредиент для удаления, id - {}, название - {}", id, ingredientName);
 
         ingredientRepository.delete(ingredientToDelete);
 
-        log.info("Ингредиент с id - {}, название - {}, был успешно удален", ingredientId, ingredientName);
+        log.info("Ингредиент с id - {}, название - {}, был успешно удален", id, ingredientName);
     }
 }

@@ -11,7 +11,6 @@ import by.egrius.pizzaShop.entity.SizeTemplate;
 import by.egrius.pizzaShop.repository.*;
 import by.egrius.pizzaShop.service.PizzaService;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.persistence.OptimisticLockException;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -33,22 +32,9 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ActiveProfiles("test")
 @Sql(scripts = "/test-data.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
-/*@Import({
-        PizzaService.class, PriceCalculator.class,
-        PizzaCreateMapper.class,
-        PizzaReadMapper.class,
-        PizzaUpdateMapper.class,
-        PizzaIngredientReadMapper.class,
-        PizzaSizeReadMapper.class,
-        SizeTemplateReadMapper.class,
-        IngredientReadMapper.class,
-        ObjectMapper.class
-})
-
- */
 public class PizzaServiceIT {
 
     @Autowired
@@ -576,8 +562,8 @@ public class PizzaServiceIT {
             assertTrue(sizeTemplate2.isPresent());
             assertEquals(sizeTemplate2.get().getSizeName(), PizzaSizeEnum.MEDIUM);
 
-            assertFalse(pizzaIngredientRepository.findByPizzaId(1L).isPresent());
-            assertFalse(pizzaSizeRepository.findByPizzaId(1L).isPresent());
+            assertFalse(pizzaIngredientRepository.findByPizzaId(1L).isEmpty());
+            assertFalse(pizzaSizeRepository.findByPizzaId(1L).isEmpty());
         }
 
     }

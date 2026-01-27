@@ -3,9 +3,11 @@ package by.egrius.pizzaShop.mapper.ingredient;
 import by.egrius.pizzaShop.dto.ingredient.IngredientUpdateDto;
 import by.egrius.pizzaShop.entity.Ingredient;
 import by.egrius.pizzaShop.mapper.BaseMapper;
+import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 
+@Component
 public class IngredientUpdateMapper implements BaseMapper<IngredientUpdateDto, Ingredient> {
 
     @Override

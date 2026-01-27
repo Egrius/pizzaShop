@@ -13,7 +13,10 @@ import by.egrius.pizzaShop.mapper.pizza.PizzaReadMapper;
 import by.egrius.pizzaShop.mapper.pizza.PizzaUpdateMapper;
 import by.egrius.pizzaShop.repository.*;
 import jakarta.persistence.EntityNotFoundException;
-import lombok.AllArgsConstructor;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Validator;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -31,7 +34,7 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 @Transactional(readOnly = true)
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class PizzaService {
 
     private final PizzaRepository pizzaRepository;
@@ -44,6 +47,8 @@ public class PizzaService {
     private final PizzaUpdateMapper pizzaUpdateMapper;
 
     private final PriceCalculator priceCalculator;
+
+    private final Validator validator;
 
     // Возможно улучшить
     public List<PizzaCardDto> getPizzaCardsByFilter(PizzaFilter filter) {
@@ -72,7 +77,7 @@ public class PizzaService {
     }
 
     public PizzaCardDetailsDto getPizzaDetails(Long id) {
-        Pizza pizza = pizzaRepository.findPizzaDetails(id).orElseThrow(() -> new EntityNotFoundException("Пицца не найдена в бд"));
+        Pizza pizza = pizzaRepository.findPizzaDetails(id).orElseThrow(() -> new EntityNotFoundException("Пицца с ID - "+ id + "не найдена в бд"));
 
         return new PizzaCardDetailsDto(
                 id,
@@ -101,6 +106,11 @@ public class PizzaService {
 
     @Transactional
     public PizzaReadDto createPizza(PizzaCreateDto createDto) {
+
+        Set<ConstraintViolation<PizzaCreateDto>> violations = validator.validate(createDto);
+        if(!violations.isEmpty()) {
+            throw new ConstraintViolationException(violations);
+        }
 
         log.info("Передано DTO на создание пиццы с именем {}", createDto.name());
 
@@ -258,7 +268,7 @@ public class PizzaService {
     @Transactional
     public PizzaUpdateResponseDto updatePizzaById(Long id, PizzaUpdateDto updateDto) {
 
-        if (id == null) throw new IllegalArgumentException("ID не может быть null");
+      //  if (id == null) throw new IllegalArgumentException("ID не может быть null");
 
         log.info("Передано DTO на обновление пиццы. Имя для обновления - \"{}\", id - {}", updateDto.name(), id);
 

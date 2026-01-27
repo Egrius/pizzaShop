@@ -15,3 +15,9 @@ spring:
   liquibase:
     enabled: false
     change-log: classpath:db/changelog/db.changelog-master.yaml
+
+# Properties
+egrius:
+  app:
+    jwtSecret: /k3xZpQ6zbTOB5n9pZVXdEoUhayKH/NVC6RjmzB/3rU=
+    jwtExpirationMs: 900000

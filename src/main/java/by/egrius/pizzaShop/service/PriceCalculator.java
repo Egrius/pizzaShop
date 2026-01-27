@@ -63,6 +63,10 @@ public class PriceCalculator {
 
         BigDecimal totalCost = BigDecimal.ZERO;
 
+        System.out.println("КАРТА ИНГРЕДИЕНТОВ: " + ingredientsMap);
+
+        System.out.println("КАРТА ИНГРЕДИЕНТОВ И ИХ ВЕСОВ: " + ingredientWeights);
+
         for (Map.Entry<Long, Integer> entry : ingredientWeights.entrySet()) {
             Ingredient ingredient = ingredientsMap.get(entry.getKey());
 
@@ -91,6 +95,7 @@ public class PriceCalculator {
             case PizzaSizeEnum.SMALL -> MIN_PRICE_SMALL;
             case  PizzaSizeEnum.MEDIUM -> MIN_PRICE_MEDIUM;
             case  PizzaSizeEnum.LARGE -> MIN_PRICE_LARGE;
+            default -> BigDecimal.ZERO;
         };
 
         return result.max(minPrice);

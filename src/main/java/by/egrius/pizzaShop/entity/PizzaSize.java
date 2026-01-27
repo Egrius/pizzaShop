@@ -26,6 +26,7 @@ public class PizzaSize {
     @JoinColumn(name = "size_template_id")
     private SizeTemplate sizeTemplate;
 
+    @Setter
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
