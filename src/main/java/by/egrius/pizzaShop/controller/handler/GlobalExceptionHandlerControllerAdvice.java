@@ -4,19 +4,22 @@ import by.egrius.pizzaShop.dto.error.ValidationErrorDto;
 import by.egrius.pizzaShop.dto.error.ViolationDto;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import org.hibernate.TypeMismatchException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @ControllerAdvice
 public class GlobalExceptionHandlerControllerAdvice {
     @ExceptionHandler(ConstraintViolationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
-    ValidationErrorDto onConstraintValidationException(ConstraintViolationException e) {
+     ValidationErrorDto onConstraintValidationException(ConstraintViolationException e) {
         System.out.println("Вызван обработчик onConstraintValidationException\n");
         ValidationErrorDto error = new ValidationErrorDto();
         for(ConstraintViolation v : e.getConstraintViolations()) {
@@ -39,6 +42,33 @@ public class GlobalExceptionHandlerControllerAdvice {
                         new ViolationDto(fieldError.getField(), fieldError.getDefaultMessage())
                 )
         );
+        return error;
+    }
+
+    @ExceptionHandler({
+            TypeMismatchException.class,
+            MethodArgumentTypeMismatchException.class,
+            MissingServletRequestParameterException.class
+    })
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public ValidationErrorDto handleTypeMismatch(Exception e) {
+        System.out.println("Вызван обработчик handleTypeMismatch: " + e.getClass().getSimpleName() + "\n");
+
+        ValidationErrorDto error = new ValidationErrorDto();
+        String message = "Неверный формат параметра";
+
+        if (e instanceof MethodArgumentTypeMismatchException mismatchEx) {
+            error.getViolations().add(
+                    new ViolationDto(mismatchEx.getName(),
+                            String.format("Параметр '%s' должен быть числом", mismatchEx.getName()))
+            );
+        } else {
+            error.getViolations().add(
+                    new ViolationDto("parameter", message)
+            );
+        }
+
         return error;
     }
 }

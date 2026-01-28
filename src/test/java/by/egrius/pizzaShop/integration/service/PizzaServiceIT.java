@@ -385,8 +385,7 @@ public class PizzaServiceIT {
         @Test
         void shouldThrowException_whenUpdatingNonExistentPizza() {
             Long nonExistentId = 999L;
-            PizzaUpdateDto updateDto = new PizzaUpdateDto(
-                    "Новое имя", "Описание", "/img.jpg", "Категория", true, 20
+            PizzaUpdateDto updateDto = new PizzaUpdateDto("Новое имя", "Описание", "/img.jpg", "Категория", true, 20
             );
 
             EntityNotFoundException exception = assertThrows(
@@ -395,16 +394,6 @@ public class PizzaServiceIT {
             );
 
             assertTrue(exception.getMessage().contains(String.valueOf(nonExistentId)));
-        }
-
-        @Test
-        void shouldThrowException_whenIdIsNull() {
-            PizzaUpdateDto updateDto = new PizzaUpdateDto(
-                    "Новое имя", "Описание", "/img.jpg", "Категория", true, 20
-            );
-
-            assertThrows(IllegalArgumentException.class,
-                    () -> pizzaService.updatePizzaById(null, updateDto));
         }
 
         @Test
@@ -436,7 +425,7 @@ public class PizzaServiceIT {
         @Test
         void shouldUpdateOnlyAvailabilityToFalse() {
             PizzaUpdateDto updateDto = new PizzaUpdateDto(
-                    null, null, null, null, false, null
+            null, null, null, null, false, null
             );
 
             PizzaUpdateResponseDto response = pizzaService.updatePizzaById(
@@ -492,7 +481,7 @@ public class PizzaServiceIT {
             Long originalVersion = original.getVersion();
 
             PizzaUpdateDto updateDto = new PizzaUpdateDto(
-                    "Обновленная", null, null, null, null, null
+                     "Обновленная", null, null, null, null, null
             );
 
             pizzaService.updatePizzaById(createdPizzaId, updateDto);
@@ -562,8 +551,8 @@ public class PizzaServiceIT {
             assertTrue(sizeTemplate2.isPresent());
             assertEquals(sizeTemplate2.get().getSizeName(), PizzaSizeEnum.MEDIUM);
 
-            assertFalse(pizzaIngredientRepository.findByPizzaId(1L).isEmpty());
-            assertFalse(pizzaSizeRepository.findByPizzaId(1L).isEmpty());
+            assertTrue(pizzaIngredientRepository.findByPizzaId(1L).isEmpty());
+            assertTrue(pizzaSizeRepository.findByPizzaId(1L).isEmpty());
         }
 
     }

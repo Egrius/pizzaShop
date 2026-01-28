@@ -20,4 +20,4 @@ spring:
 egrius:
   app:
     jwtSecret: /k3xZpQ6zbTOB5n9pZVXdEoUhayKH/NVC6RjmzB/3rU=
-    jwtExpirationMs: 900000
+    jwtExpirationMs: 86400000

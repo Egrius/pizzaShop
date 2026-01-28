@@ -2,7 +2,6 @@ package by.egrius.pizzaShop.integration.controller;
 
 import by.egrius.pizzaShop.entity.Pizza;
 import by.egrius.pizzaShop.repository.PizzaRepository;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -13,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
@@ -20,10 +20,12 @@ import java.util.List;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Sql(scripts = "/test-data.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 class PublicPizzaControllerIT {
 
     @Autowired
@@ -32,8 +34,6 @@ class PublicPizzaControllerIT {
     @Autowired
     private PizzaRepository pizzaRepository;
 
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @Nested
     class GetPizzaCardsTests {
@@ -103,11 +103,69 @@ class PublicPizzaControllerIT {
                             .param("page", page)
                             .param("pageSize", pageSize)
                     )
-                    .andExpect(content().contentType(MediaType.parseMediaType("application/json"))) // -> поправить тип в хэндлере и исправить тест
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isBadRequest())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON));
         }
 
 
+
+    }
+
+    @Nested
+    class GetPizzaCardDetailsTests {
+        @BeforeEach
+        void setUp() {
+            pizzaRepository.deleteAll();
+
+            List<Pizza> pizzas = List.of(
+                    Pizza.create(
+                            "Маргарита",
+                            "Классическая пицца",
+                            "Классические",
+                            "/images/margherita.jpg",
+                            true,
+                            15
+                    ),
+                    Pizza.create(
+                            "Пицца_2",
+                            "Классическая пицца_2",
+                            "Классические",
+                            "/images/margherita.jpg",
+                            true,
+                            15
+                    )
+            );
+            pizzaRepository.saveAll(pizzas);
+        }
+
+        @Test
+        void shouldBe200_whenIdFound()  throws Exception {
+            long id = 1L;
+            mockMvc.perform(get("/api/pizzas/details/" + id))
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.id").value(id))
+                    .andExpect(jsonPath("$.name").value("Маргарита"))
+                    .andExpect(jsonPath("$.description").value("Классическая пицца"))
+                    .andExpect(jsonPath("$.imageUrl").value("/images/margherita.jpg"))
+                    .andExpect(jsonPath("$.ingredientInfoDtos.length()").value(0))
+                    .andExpect(jsonPath("$.pizzaSizeInfoDtos.length()").value(0));
+        }
+
+        @Test
+        void shouldBe404_whenIdNotFound() throws Exception{
+            long badId = 999L;
+
+            mockMvc.perform(get("/api/pizzas/details/" + badId))
+                    .andExpect(status().isNotFound())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+        }
+
+        @Test
+        void shouldBe404_whenIdIsMissing() throws Exception {
+            mockMvc.perform(get("/api/pizzas/details/"))
+                    .andExpect(status().isNotFound());
+        }
 
     }
 

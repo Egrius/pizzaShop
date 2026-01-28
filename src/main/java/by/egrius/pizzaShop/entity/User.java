@@ -50,6 +50,16 @@ public class User {
         return user;
     }
 
+    public static User createUserCustom(String fullName, String email, String phone, String passwordHash, UserRole userRole) {
+        User user = new User();
+        user.fullName = fullName.trim();
+        user.email = email.toLowerCase().trim();
+        user.phone = phone.trim();
+        user.passwordHash = passwordHash;
+        user.role = userRole;
+        return user;
+    }
+
     public void changeFullName(String newName) {
         this.fullName = newName.trim();
     }

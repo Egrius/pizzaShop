@@ -10,10 +10,12 @@ import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
+@PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
 @RequestMapping("/api/admin/pizzas")
 @Validated
@@ -21,7 +23,7 @@ public class AdminPizzaController {
     private final PizzaService pizzaService;
 
     @PostMapping("/create")
-    public ResponseEntity<PizzaReadDto> createPizza(@RequestBody @Valid PizzaCreateDto pizzaCreateDto) {
+    public ResponseEntity<PizzaReadDto> createPizza(@RequestBody PizzaCreateDto pizzaCreateDto) {
 
         PizzaReadDto pizzaReadDto = pizzaService.createPizza(pizzaCreateDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(pizzaReadDto);

@@ -77,7 +77,7 @@ public class PizzaService {
     }
 
     public PizzaCardDetailsDto getPizzaDetails(Long id) {
-        Pizza pizza = pizzaRepository.findPizzaDetails(id).orElseThrow(() -> new EntityNotFoundException("Пицца с ID - "+ id + "не найдена в бд"));
+        Pizza pizza = pizzaRepository.findPizzaDetails(id).orElseThrow(() -> new EntityNotFoundException("Пицца с ID - "+ id + " не найдена в бд"));
 
         return new PizzaCardDetailsDto(
                 id,
@@ -106,11 +106,6 @@ public class PizzaService {
 
     @Transactional
     public PizzaReadDto createPizza(PizzaCreateDto createDto) {
-
-        Set<ConstraintViolation<PizzaCreateDto>> violations = validator.validate(createDto);
-        if(!violations.isEmpty()) {
-            throw new ConstraintViolationException(violations);
-        }
 
         log.info("Передано DTO на создание пиццы с именем {}", createDto.name());
 
@@ -272,8 +267,14 @@ public class PizzaService {
 
         log.info("Передано DTO на обновление пиццы. Имя для обновления - \"{}\", id - {}", updateDto.name(), id);
 
+
         Pizza pizzaToUpdate = pizzaRepository.findById(id).orElseThrow(() -> new EntityNotFoundException(
                 String.format("Пицца для обновления с id %d не найдена в БД", id)));
+
+
+        if(pizzaRepository.existsByName(updateDto.name())) {
+            throw new PizzaAlreadyExistsException("Пицца с именем " + updateDto.name() + " уже существует!");
+        }
 
         pizzaUpdateMapper.map(updateDto,pizzaToUpdate);
 

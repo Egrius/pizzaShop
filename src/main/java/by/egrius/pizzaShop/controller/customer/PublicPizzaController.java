@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Objects;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/pizzas")
@@ -21,7 +23,7 @@ public class PublicPizzaController {
 
     @GetMapping("/cards")
     public ResponseEntity<Slice<PizzaCardDto>> getPizzaCards(@RequestParam(name="page", defaultValue = "0") @Min(0) int page,
-                                                             @RequestParam(name="pageSize", defaultValue = "8") @Min(1) @Max(50) int pageSize) {
+                                                             @RequestParam(name="pageSize", defaultValue = "8") @Min(1) int pageSize) {
         Slice<PizzaCardDto> pizzaCardDtoSlice = pizzaService.getPizzaCardsSlice(page, pageSize);
         return ResponseEntity.ok(pizzaCardDtoSlice);
     }

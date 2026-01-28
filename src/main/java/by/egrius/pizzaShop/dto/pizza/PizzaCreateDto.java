@@ -35,7 +35,7 @@ public record PizzaCreateDto (
 
         @NotNull
         @NotEmpty
-        Map<Long, Integer> ingredientWeights,
+        Map<Long, @Positive Integer> ingredientWeights,
 
         @NotNull
         @NotEmpty
