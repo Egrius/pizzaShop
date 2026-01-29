@@ -13,8 +13,6 @@ import by.egrius.pizzaShop.mapper.pizza.PizzaReadMapper;
 import by.egrius.pizzaShop.mapper.pizza.PizzaUpdateMapper;
 import by.egrius.pizzaShop.repository.*;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -20,10 +20,6 @@ repositories {
 
 dependencies {
 
-	// H2 для тестов
-	testRuntimeOnly 'com.h2database:h2'
-
-
 	// Валидация
 	implementation("org.springframework.boot:spring-boot-starter-validation:4.0.1")
 
@@ -31,7 +27,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-liquibase'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.1'
 
+	// БД
 	runtimeOnly 'org.postgresql:postgresql'
 
 	// Jwt
@@ -43,6 +41,7 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-liquibase-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+
 
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 

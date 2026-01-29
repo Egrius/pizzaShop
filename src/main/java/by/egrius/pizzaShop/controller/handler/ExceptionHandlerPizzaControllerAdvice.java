@@ -17,17 +17,6 @@ import java.time.LocalDateTime;
 
 @ControllerAdvice(assignableTypes = {PublicPizzaController.class, AdminPizzaController.class})
 public class ExceptionHandlerPizzaControllerAdvice {
-    @ExceptionHandler(EntityNotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    @ResponseBody
-    public ExceptionDto onPizzaNotFoundException(HttpServletRequest request, Exception e) {
-        return new ExceptionDto(
-                e.getMessage(),
-                HttpStatus.NOT_FOUND.value(),
-                request.getRequestURI(),
-                LocalDateTime.now()
-        );
-    }
 
     @ExceptionHandler(PizzaAlreadyExistsException.class)
     @ResponseStatus(HttpStatus.CONFLICT)

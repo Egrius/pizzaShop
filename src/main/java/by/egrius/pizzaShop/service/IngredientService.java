@@ -18,7 +18,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -36,44 +35,43 @@ public class IngredientService {
     private final IngredientCreateMapper ingredientCreateMapper;
     private final IngredientUpdateMapper ingredientUpdateMapper;
     private final PizzaPriceRecalculationService pizzaPriceRecalculationService;
-    private final TransactionTemplate transactionTemplate;
     private final EntityManager entityManager;
 
     public Page<IngredientReadDto> getAllIngredients(Pageable pageable) {
         return ingredientRepository.findAll(pageable).map(ingredientReadMapper::map);
     }
 
-    public List<IngredientReadDto> getIngredientsByIds(Set<Long> ingredientIds) {
-        log.debug("Запрос ингредиентов по {} IDs", ingredientIds.size());
+        public List<IngredientReadDto> getIngredientsByIds(Set<Long> ingredientIds) {
+            log.debug("Запрос ингредиентов по {} IDs", ingredientIds.size());
 
-        if(ingredientIds.isEmpty()) {
-            log.error("Пустой список ID ингредиентов");
-            throw new IllegalArgumentException("Список ID ингредиентов не может быть пустым");
+            if(ingredientIds.isEmpty()) {
+                log.error("Пустой список ID ингредиентов");
+                throw new IllegalArgumentException("Список ID ингредиентов не может быть пустым");
+            }
+
+            List<Ingredient> ingredients = ingredientRepository.findAllById(ingredientIds);
+            log.debug("Найдено {} ингредиентов в БД", ingredients.size());
+
+            Set<Long> foundIds = ingredients.stream()
+                    .map(Ingredient::getId)
+                    .collect(Collectors.toSet());
+
+            List<Long> notFound = ingredientIds.stream()
+                    .filter(id -> !foundIds.contains(id))
+                    .toList();
+
+            if (!notFound.isEmpty()) {
+                log.warn("Отсутствуют ингредиенты с ID: {}", notFound);
+                throw new EntityNotFoundException(
+                        String.format("Не найдены ингредиенты с ID: %s (запрошено: %d, найдено: %d)",
+                                notFound, ingredientIds.size(), ingredients.size())
+                );
+            }
+
+            return ingredients.stream()
+                    .map(ingredientReadMapper::map)
+                    .toList();
         }
-
-        List<Ingredient> ingredients = ingredientRepository.findAllById(ingredientIds);
-        log.debug("Найдено {} ингредиентов в БД", ingredients.size());
-
-        Set<Long> foundIds = ingredients.stream()
-                .map(Ingredient::getId)
-                .collect(Collectors.toSet());
-
-        List<Long> notFound = ingredientIds.stream()
-                .filter(id -> !foundIds.contains(id))
-                .toList();
-
-        if (!notFound.isEmpty()) {
-            log.warn("Отсутствуют ингредиенты с ID: {}", notFound);
-            throw new EntityNotFoundException(
-                    String.format("Не найдены ингредиенты с ID: %s (запрошено: %d, найдено: %d)",
-                            notFound, ingredientIds.size(), ingredients.size())
-            );
-        }
-
-        return ingredients.stream()
-                .map(ingredientReadMapper::map)
-                .toList();
-    }
 
     @Transactional
     public IngredientReadDto createIngredient(IngredientCreateDto ingredientCreateDto) {
@@ -101,8 +99,6 @@ public class IngredientService {
 
         BigDecimal priceBefore = ingredientToUpdate.getPrice();
         ingredientUpdateMapper.map(ingredientUpdateDto, ingredientToUpdate);
-
-        // Ingredient updatedIngredient = ingredientRepository.save(ingredientToUpdate);
 
         entityManager.flush();
 

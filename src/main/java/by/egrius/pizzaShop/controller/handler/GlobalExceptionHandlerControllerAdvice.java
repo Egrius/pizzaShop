@@ -1,7 +1,10 @@
 package by.egrius.pizzaShop.controller.handler;
 
+import by.egrius.pizzaShop.dto.error.ExceptionDto;
 import by.egrius.pizzaShop.dto.error.ValidationErrorDto;
 import by.egrius.pizzaShop.dto.error.ViolationDto;
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.hibernate.TypeMismatchException;
@@ -13,6 +16,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+
+import java.time.LocalDateTime;
 
 @ControllerAdvice
 public class GlobalExceptionHandlerControllerAdvice {
@@ -70,5 +75,17 @@ public class GlobalExceptionHandlerControllerAdvice {
         }
 
         return error;
+    }
+
+    @ExceptionHandler(EntityNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public ExceptionDto onEntityNotFoundException(HttpServletRequest request, Exception e) {
+        return new ExceptionDto(
+                e.getMessage(),
+                HttpStatus.NOT_FOUND.value(),
+                request.getRequestURI(),
+                LocalDateTime.now()
+        );
     }
 }

@@ -21,6 +21,7 @@ public record PizzaCreateDto (
 
         @NotNull
         @URL
+        @Length(max = 100)
         String imageUrl,
 
         @NotNull

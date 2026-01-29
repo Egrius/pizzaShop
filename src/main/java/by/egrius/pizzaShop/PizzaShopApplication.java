@@ -3,9 +3,6 @@ package by.egrius.pizzaShop;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-// TODO Сделать кастомный валидатор для PizzaUpdateDto (поддержка частичного обновления + валидация данных)
-// TODO Валидировать на уровне контроллера
-
 @SpringBootApplication
 public class PizzaShopApplication {
 
@@ -14,3 +11,9 @@ public class PizzaShopApplication {
 
 	}
 }
+
+// TODO Тесты для нового контроллера (unit, IT)
+// TODO Контроллер для шаблонов размеров
+// TODO Разобраться с кэшированием и попробовать тесты на производительность (возможно стоит после готового апи)
+// TODO Система заказов
+// TODO Система отзывов
