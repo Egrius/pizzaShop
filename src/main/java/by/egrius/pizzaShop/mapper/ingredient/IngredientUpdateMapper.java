@@ -22,9 +22,9 @@ public class IngredientUpdateMapper implements BaseMapper<IngredientUpdateDto, I
     }
 
     private void copy(IngredientUpdateDto fromObject, Ingredient toObject) {
-        if(fromObject.newName() != null && !fromObject.newName().isBlank()) toObject.setName(fromObject.newName());
-        if(fromObject.newDescription() != null && !fromObject.newDescription().isBlank()) toObject.setDescription(fromObject.newDescription());
-        if(fromObject.newPrice() != null && fromObject.newPrice().compareTo(BigDecimal.ZERO) > 0) toObject.setPrice(fromObject.newPrice());
+        if(fromObject.name() != null && !fromObject.name().isBlank()) toObject.setName(fromObject.name());
+        if(fromObject.description() != null && !fromObject.description().isBlank()) toObject.setDescription(fromObject.description());
+        if(fromObject.price() != null && fromObject.price().compareTo(BigDecimal.ZERO) > 0) toObject.setPrice(fromObject.price());
         if(fromObject.available() != null) toObject.setAvailable(fromObject.available());
     }
 }

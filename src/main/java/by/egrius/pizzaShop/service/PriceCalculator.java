@@ -12,20 +12,24 @@ import java.util.Map;
 @Component
 public class PriceCalculator {
 
-    private static final BigDecimal DOUGH_PRICE_PER_KG = new BigDecimal("8.50");  // Тесто
-    private static final BigDecimal SAUCE_PRICE_PER_KG = new BigDecimal("4.00");  // Соус
-    private static final BigDecimal MARKUP_PERCENTAGE = new BigDecimal("1.5");    // 150% наценка (стандартно)
+    // БОЛЕЕ РЕАЛИСТИЧНЫЕ ЦЕНЫ
+    private static final BigDecimal DOUGH_PRICE_PER_KG = new BigDecimal("5.00");  // Тесто подешевле
+    private static final BigDecimal SAUCE_PRICE_PER_KG = new BigDecimal("3.00");  // Соус подешевле
 
-    // Процентное соотношение
-    private static final BigDecimal DOUGH_PERCENTAGE = new BigDecimal("0.5");     // 50% теста
-    private static final BigDecimal SAUCE_PERCENTAGE = new BigDecimal("0.1");     // 10% соуса
+    // РЕАЛИСТИЧНАЯ НАЦЕНКА (50-100%)
+    private static final BigDecimal MARKUP_PERCENTAGE = new BigDecimal("0.8");    // 80% наценка
 
-    // Минимальные цены в BYN (как в Додо)
+    // Процентное соотношение (исправлено)
+    private static final BigDecimal DOUGH_PERCENTAGE = new BigDecimal("0.45");    // 45% теста
+    private static final BigDecimal INGREDIENTS_PERCENTAGE = new BigDecimal("0.45"); // 45% ингредиентов
+    private static final BigDecimal SAUCE_PERCENTAGE = new BigDecimal("0.10");    // 10% соуса
+
+    // Минимальные цены
     private static final BigDecimal MIN_PRICE_SMALL = new BigDecimal("12.90");
-    private static final BigDecimal MIN_PRICE_MEDIUM = new BigDecimal("18.90");
-    private static final BigDecimal MIN_PRICE_LARGE = new BigDecimal("24.90");
+    private static final BigDecimal MIN_PRICE_MEDIUM = new BigDecimal("16.90");
+    private static final BigDecimal MIN_PRICE_LARGE = new BigDecimal("20.90");
 
-    private static final BigDecimal PRICE_SUFFIX = new BigDecimal("0.90");        // Все цены заканчиваются на .90
+    private static final BigDecimal PRICE_SUFFIX = new BigDecimal("0.90");
     private static final BigDecimal GRAMS_TO_KG = new BigDecimal("1000");
 
     public BigDecimal calculatePrice(
@@ -33,28 +37,38 @@ public class PriceCalculator {
             Map<Long, Ingredient> ingredientsMap,
             Map<Long, Integer> ingredientWeights) {
 
+        // 1. Стоимость ингредиентов для БАЗОВОГО размера (без множителя)
         BigDecimal ingredientsCost = calculateIngredientsCost(ingredientsMap, ingredientWeights);
 
-        BigDecimal pizzaWeightKg = BigDecimal.valueOf(sizeTemplate.getWeightGrams())
+        // 2. Вес пиццы с учетом множителя размера
+        BigDecimal baseWeightKg = BigDecimal.valueOf(sizeTemplate.getWeightGrams())
                 .divide(GRAMS_TO_KG, 4, RoundingMode.HALF_EVEN);
 
-        BigDecimal doughCost = pizzaWeightKg
+        // 3. Расчет для конкретного размера
+        BigDecimal doughCost = baseWeightKg
                 .multiply(DOUGH_PERCENTAGE)
-                .multiply(DOUGH_PRICE_PER_KG);
+                .multiply(DOUGH_PRICE_PER_KG)
+                .multiply(sizeTemplate.getSizeMultiplier());
 
-        BigDecimal sauceCost = pizzaWeightKg
+        BigDecimal sauceCost = baseWeightKg
                 .multiply(SAUCE_PERCENTAGE)
-                .multiply(SAUCE_PRICE_PER_KG);
+                .multiply(SAUCE_PRICE_PER_KG)
+                .multiply(sizeTemplate.getSizeMultiplier());
 
-        BigDecimal totalCost = ingredientsCost
+        BigDecimal scaledIngredientsCost = ingredientsCost
+                .multiply(sizeTemplate.getSizeMultiplier());
+
+        // 4. Полная себестоимость для данного размера
+        BigDecimal totalCost = scaledIngredientsCost
                 .add(doughCost)
                 .add(sauceCost);
 
-        BigDecimal priceWithSizeAndMarkup = totalCost
-                .multiply(sizeTemplate.getSizeMultiplier())
+        // 5. Добавляем наценку
+        BigDecimal priceWithMarkup = totalCost
                 .multiply(BigDecimal.ONE.add(MARKUP_PERCENTAGE));
 
-        return roundToNicePrice(priceWithSizeAndMarkup, sizeTemplate.getSizeName());
+        // 6. Округление и проверка минимальной цены
+        return roundToNicePrice(priceWithMarkup, sizeTemplate.getSizeName());
     }
 
     private BigDecimal calculateIngredientsCost(
@@ -63,14 +77,13 @@ public class PriceCalculator {
 
         BigDecimal totalCost = BigDecimal.ZERO;
 
-        System.out.println("КАРТА ИНГРЕДИЕНТОВ: " + ingredientsMap);
-
-        System.out.println("КАРТА ИНГРЕДИЕНТОВ И ИХ ВЕСОВ: " + ingredientWeights);
-
         for (Map.Entry<Long, Integer> entry : ingredientWeights.entrySet()) {
             Ingredient ingredient = ingredientsMap.get(entry.getKey());
 
-            // Переводим граммы в кг
+            if (ingredient == null) {
+                continue;
+            }
+
             BigDecimal weightKg = BigDecimal.valueOf(entry.getValue())
                     .divide(GRAMS_TO_KG, 4, RoundingMode.HALF_EVEN);
 
@@ -82,20 +95,17 @@ public class PriceCalculator {
     }
 
     private BigDecimal roundToNicePrice(BigDecimal price, PizzaSizeEnum size) {
-
-        System.out.println("--- Результат из калькулятора ДО округления: " + price + " ---");
-
+        // Округляем до целого (12.34 -> 12.00)
         BigDecimal roundedToInteger = price.setScale(0, RoundingMode.HALF_UP);
 
+        // Добавляем .90
         BigDecimal result = roundedToInteger.add(PRICE_SUFFIX);
 
-        System.out.println("--- Результат из калькулятора: " + result + " ---");
-
+        // Проверяем минимальную цену
         BigDecimal minPrice = switch (size) {
-            case PizzaSizeEnum.SMALL -> MIN_PRICE_SMALL;
-            case  PizzaSizeEnum.MEDIUM -> MIN_PRICE_MEDIUM;
-            case  PizzaSizeEnum.LARGE -> MIN_PRICE_LARGE;
-            default -> BigDecimal.ZERO;
+            case SMALL -> MIN_PRICE_SMALL;
+            case MEDIUM -> MIN_PRICE_MEDIUM;
+            case LARGE -> MIN_PRICE_LARGE;
         };
 
         return result.max(minPrice);

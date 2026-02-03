@@ -8,6 +8,7 @@ import by.egrius.pizzaShop.entity.Ingredient;
 import by.egrius.pizzaShop.entity.Pizza;
 import by.egrius.pizzaShop.entity.PizzaSizeEnum;
 import by.egrius.pizzaShop.entity.SizeTemplate;
+import by.egrius.pizzaShop.integration.testcontainer.TestContainerBase;
 import by.egrius.pizzaShop.repository.*;
 import by.egrius.pizzaShop.service.PizzaService;
 import jakarta.persistence.EntityNotFoundException;
@@ -35,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ActiveProfiles("test")
 @Sql(scripts = "/test-data.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
-public class PizzaServiceIT {
+public class PizzaServiceIT extends TestContainerBase {
 
     @Autowired
     PizzaService pizzaService;

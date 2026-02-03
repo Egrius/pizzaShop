@@ -9,5 +9,6 @@ public record IngredientReadDto (
         String description,
         BigDecimal price,
         boolean available,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        Long version
 ) { }

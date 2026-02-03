@@ -32,16 +32,16 @@ public class AdminIngredientController {
     private final IngredientService ingredientService;
 
     @GetMapping("/all")
-    public ResponseEntity<Page<IngredientReadDto>> getAllIngredients(@RequestParam(defaultValue = "0")
+    public ResponseEntity<Page<IngredientReadDto>> getAllIngredients(@RequestParam(name = "page", defaultValue = "0")
                                                                       @Min(value = 0, message = "Номер страницы не может быть отрицательным")
                                                                       int page,
 
-                                                                      @RequestParam(defaultValue = "20")
+                                                                      @RequestParam(name = "pageSize", defaultValue = "20")
                                                                       @Min(value = 1, message = "Размер страницы должен быть не менее 1")
                                                                       @Max(value = 100, message = "Размер страницы не может превышать 100")
                                                                       int pageSize) {
-        Pageable pageable = PageRequest.of(page, pageSize);
-        return ResponseEntity.ok(ingredientService.getAllIngredients(pageable));
+
+        return ResponseEntity.ok(ingredientService.getAllIngredients(page, pageSize));
     }
 
     @PostMapping("/by-ids")

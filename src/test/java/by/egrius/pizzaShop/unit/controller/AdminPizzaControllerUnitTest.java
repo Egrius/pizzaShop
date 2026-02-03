@@ -15,8 +15,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -113,7 +111,6 @@ class AdminPizzaControllerUnitTest {
             assertThat(response.getBody().name()).isEqualTo("Margarita");
             assertThat(response.getBody().cookingTimeMinutes()).isEqualTo(15);
 
-            // Verify service was called with correct DTO
             ArgumentCaptor<PizzaCreateDto> dtoCaptor =
                     ArgumentCaptor.forClass(PizzaCreateDto.class);
             verify(pizzaService).createPizza(dtoCaptor.capture());
@@ -210,22 +207,22 @@ class AdminPizzaControllerUnitTest {
             // Given
             Long pizzaId = 1L;
             PizzaUpdateDto partialUpdateDto = new PizzaUpdateDto(
-                    null, // name not updated
-                    "New description only", // only description updated
-                    null, // image not updated
-                    null, // category not updated
-                    false, // available changed
-                    null  // cooking time not updated
+                    null,
+                    "New description only",
+                    null,
+                    null,
+                    false,
+                    null
             );
 
             PizzaUpdateResponseDto partialResponse = new PizzaUpdateResponseDto(
                     1L,
-                    "Margarita", // original name preserved
+                    "Margarita",
                     "New description only",
-                    "https://example.com/margarita.jpg", // original image
-                    "CLASSIC", // original category
-                    false, // updated availability
-                    15, // original cooking time
+                    "https://example.com/margarita.jpg",
+                    "CLASSIC",
+                    false,
+                    15,
                     LocalDateTime.now()
             );
 
@@ -411,7 +408,7 @@ class AdminPizzaControllerUnitTest {
                     .thenReturn(pizzaUpdateResponseDto);
             doNothing().when(pizzaService).deletePizzaById(pizzaId);
 
-            // When - Execute all operations
+            // When
             adminPizzaController.createPizza(pizzaCreateDto);
             adminPizzaController.updatePizza(pizzaId, pizzaUpdateDto);
             adminPizzaController.deletePizza(pizzaId);
@@ -480,7 +477,6 @@ class AdminPizzaControllerUnitTest {
         @Test
         @DisplayName("Should propagate service exceptions")
         void shouldPropagateServiceExceptions() {
-            // Given
             Long pizzaId = 1L;
             String serviceErrorMessage = "Database connection failed";
 
@@ -491,7 +487,6 @@ class AdminPizzaControllerUnitTest {
             doThrow(new RuntimeException(serviceErrorMessage))
                     .when(pizzaService).deletePizzaById(pizzaId);
 
-            // When & Then - All should throw RuntimeException
             assertThatThrownBy(() -> adminPizzaController.createPizza(pizzaCreateDto))
                     .isInstanceOf(RuntimeException.class)
                     .hasMessage(serviceErrorMessage);
@@ -508,29 +503,17 @@ class AdminPizzaControllerUnitTest {
         @Test
         @DisplayName("Should handle validation exceptions from service")
         void shouldHandleValidationExceptions() {
-            // Given
+
             String validationError = "Ingredient weight must be positive";
 
             when(pizzaService.createPizza(any(PizzaCreateDto.class)))
                     .thenThrow(new IllegalArgumentException(validationError));
 
-            // When & Then
             assertThatThrownBy(() ->
                     adminPizzaController.createPizza(pizzaCreateDto)
             )
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage(validationError);
         }
-    }
-
-    @Test
-    @DisplayName("Should verify no unexpected interactions")
-    void shouldVerifyNoUnexpectedInteractions() {
-        // Given - No setup
-
-        // When - Nothing called
-
-        // Then
-        verifyNoInteractions(pizzaService);
     }
 }

@@ -1,17 +1,29 @@
 spring:
   application:
     name: pizzaShop
+
   jpa:
     database: POSTGRESQL
     show-sql: true
     hibernate:
       ddl-auto: validate
+
   datasource:
     platform: postgres
     url: jdbc:postgresql://localhost:5432/pizza_db
     username: pizza_user
     password: pizza123
     driverClassName: org.postgresql.Driver
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+
+  cache:
+    type: redis
+
   liquibase:
     enabled: false
     change-log: classpath:db/changelog/db.changelog-master.yaml

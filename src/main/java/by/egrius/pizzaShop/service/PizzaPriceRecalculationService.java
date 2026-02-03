@@ -31,7 +31,6 @@ public class PizzaPriceRecalculationService {
     public void recalculatePricesForIngredient(Long ingredientId) {
         log.info("Перерасчет цен для пицц, содержащих ингредиент ID: {}", ingredientId);
 
-        // Находим все пиццы с этим ингредиентом
         var pizzas = pizzaRepository.findPizzasByIngredientId(ingredientId);
 
         if (pizzas.isEmpty()) {
@@ -53,7 +52,7 @@ public class PizzaPriceRecalculationService {
         log.info("=== START ASYNC ===");
         log.debug("Начало асинхронного перерасчёта цены для ингредиента с ID - {}", ingredientId);
 
-        entityManager.clear();
+        //entityManager.clear();
 
         recalculatePricesForIngredient(ingredientId);
 

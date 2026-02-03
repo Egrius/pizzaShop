@@ -5,6 +5,7 @@ import by.egrius.pizzaShop.dto.ingredient.IngredientReadDto;
 import by.egrius.pizzaShop.dto.ingredient.IngredientUpdateDto;
 import by.egrius.pizzaShop.dto.pizza.PizzaCreateDto;
 import by.egrius.pizzaShop.entity.*;
+import by.egrius.pizzaShop.integration.testcontainer.TestContainerBase;
 import by.egrius.pizzaShop.repository.*;
 import by.egrius.pizzaShop.service.IngredientService;
 import by.egrius.pizzaShop.service.PizzaService;
@@ -34,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ActiveProfiles("test")
 @Sql(scripts = "/test-data.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
-class IngredientServiceIT {
+class IngredientServiceIT extends TestContainerBase {
 
     @Autowired
     IngredientService ingredientService;

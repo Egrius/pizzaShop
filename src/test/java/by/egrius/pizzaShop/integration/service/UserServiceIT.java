@@ -9,6 +9,7 @@ import by.egrius.pizzaShop.entity.UserRole;
 import by.egrius.pizzaShop.exception.InvalidPasswordException;
 import by.egrius.pizzaShop.exception.UserAlreadyExistsException;
 import by.egrius.pizzaShop.exception.UserNotFoundException;
+import by.egrius.pizzaShop.integration.testcontainer.TestContainerBase;
 import by.egrius.pizzaShop.repository.UserRepository;
 import by.egrius.pizzaShop.service.UserService;
 import jakarta.transaction.Transactional;
@@ -28,7 +29,7 @@ import static org.assertj.core.api.Assertions.*;
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
-class UserServiceIT {
+class UserServiceIT extends TestContainerBase {
 
     @Autowired
     private UserService userService;

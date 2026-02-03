@@ -38,6 +38,9 @@ public class Ingredient {
     @Column(name = "created_at", updatable = false, insertable = false)
     private LocalDateTime createdAt;
 
+    @Version
+    private Long version;
+
     @OneToMany(mappedBy = "ingredient")
     private List<PizzaIngredient> pizzaIngredients;
 

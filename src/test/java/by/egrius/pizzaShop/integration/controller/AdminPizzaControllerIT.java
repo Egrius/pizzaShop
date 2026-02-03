@@ -3,6 +3,7 @@ package by.egrius.pizzaShop.integration.controller;
 import by.egrius.pizzaShop.dto.pizza.PizzaCreateDto;
 import by.egrius.pizzaShop.dto.pizza.PizzaUpdateDto;
 import by.egrius.pizzaShop.entity.*;
+import by.egrius.pizzaShop.integration.testcontainer.TestContainerBase;
 import by.egrius.pizzaShop.repository.*;
 import by.egrius.pizzaShop.security.UserDetailsServiceImpl;
 import by.egrius.pizzaShop.security.jwt.JwtUtils;
@@ -37,8 +38,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@Sql(scripts = "/test-data.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
-class AdminPizzaControllerIT {
+//@Sql(scripts = "/test-data.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+class AdminPizzaControllerIT extends TestContainerBase {
     @Autowired
     private MockMvc mockMvc;
 

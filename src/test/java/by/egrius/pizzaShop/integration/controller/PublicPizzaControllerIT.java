@@ -1,6 +1,7 @@
 package by.egrius.pizzaShop.integration.controller;
 
 import by.egrius.pizzaShop.entity.Pizza;
+import by.egrius.pizzaShop.integration.testcontainer.TestContainerBase;
 import by.egrius.pizzaShop.repository.PizzaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -24,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Sql(scripts = "/test-data.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
-class PublicPizzaControllerIT {
+class PublicPizzaControllerIT extends TestContainerBase {
 
     @Autowired
     private MockMvc mockMvc;

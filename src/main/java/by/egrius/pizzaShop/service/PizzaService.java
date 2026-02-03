@@ -16,6 +16,8 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -25,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -48,9 +51,8 @@ public class PizzaService {
 
     private final Validator validator;
 
-    // Возможно улучшить
+
     public List<PizzaCardDto> getPizzaCardsByFilter(PizzaFilter filter) {
-        if(filter == null) throw new IllegalArgumentException("Фильтр не определён");
         return pizzaFilterRepository.findByFilter(filter);
     }
 
@@ -74,7 +76,10 @@ public class PizzaService {
                 ));
     }
 
+    @Cacheable(value = "pizzaCardDetails", key = "#id")
     public PizzaCardDetailsDto getPizzaDetails(Long id) {
+        log.info("Вызов getPizzaDetails с id={} (id==null? {})", id, id == null);
+
         Pizza pizza = pizzaRepository.findPizzaDetails(id).orElseThrow(() -> new EntityNotFoundException("Пицца с ID - "+ id + " не найдена в бд"));
 
         return new PizzaCardDetailsDto(
@@ -259,6 +264,7 @@ public class PizzaService {
     }
 
     @Transactional
+    @CacheEvict(value = "pizzaCardDetails", key = "#id")
     public PizzaUpdateResponseDto updatePizzaById(Long id, PizzaUpdateDto updateDto) {
 
       //  if (id == null) throw new IllegalArgumentException("ID не может быть null");
@@ -292,6 +298,7 @@ public class PizzaService {
     }
 
     @Transactional
+    @CacheEvict(value = "pizzaCardDetails", key = "#pizzaId")
     public void deletePizzaById(Long id) {
         log.info("Передано id на удаление пиццы - {}", id);
 

@@ -28,12 +28,12 @@ public class ExceptionHandlerIngredientControllerAdvice {
     }
 
     @ExceptionHandler(IngredientAlreadyExistsException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseStatus(HttpStatus.CONFLICT)
     @ResponseBody
     ExceptionDto onIngredientAlreadyExistsException(HttpServletRequest request, Exception e) {
         return new ExceptionDto(
                 e.getMessage(),
-                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.CONFLICT.value(),
                 request.getRequestURI(),
                 LocalDateTime.now()
         );

@@ -24,4 +24,21 @@ public class AsyncConfig {
         return threadPoolTaskExecutor;
 
     }
+
+    @Bean("paymentProcessingExecutor")
+    public TaskExecutor paymentProcessingExecutor() {
+        ThreadPoolTaskExecutor threadPoolTaskExecutor = new ThreadPoolTaskExecutor();
+        threadPoolTaskExecutor.setCorePoolSize(10);
+        threadPoolTaskExecutor.setMaxPoolSize(40);
+        threadPoolTaskExecutor.setQueueCapacity(200);
+        threadPoolTaskExecutor.setKeepAliveSeconds(120);
+        threadPoolTaskExecutor.setThreadNamePrefix("payment-");
+        threadPoolTaskExecutor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardOldestPolicy());
+        threadPoolTaskExecutor.setWaitForTasksToCompleteOnShutdown(true);
+        threadPoolTaskExecutor.setAwaitTerminationSeconds(30);
+        threadPoolTaskExecutor.initialize();
+
+        return threadPoolTaskExecutor;
+
+    }
 }

@@ -11,17 +11,19 @@ import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 
 @Table(name = "orders")
 @Entity
 @Getter
 @Setter
-@ToString(exclude = {"user"})
+@ToString(exclude = {"user", "orderItemList"})
 @NoArgsConstructor
 public class Order {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @SequenceGenerator(name = "orders_seq", sequenceName = "orders_id_seq", allocationSize = 1)
     private Long id;
 
     @Column(name = "order_number", nullable = false, unique = true)
@@ -39,7 +41,7 @@ public class Order {
     private BigDecimal totalPrice;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "delivery_address", nullable = false)
+    @Column(name = "delivery_address")
     //columnDefinition = "jsonb"
     @Convert(converter = AddressConverter.class)
     private Address deliveryAddress;
@@ -48,8 +50,11 @@ public class Order {
     private String customerNotes;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "delivery_type")
+    @Column(name = "delivery_type", nullable = false)
     private DeliveryType deliveryType;
+
+    @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, mappedBy = "order", cascade = CascadeType.ALL)
+    private List<OrderItem> orderItemList;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
