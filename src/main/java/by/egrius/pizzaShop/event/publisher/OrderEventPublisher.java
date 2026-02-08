@@ -1,6 +1,5 @@
 package by.egrius.pizzaShop.event.publisher;
 
-import by.egrius.pizzaShop.dto.order.OrderReadDto;
 import by.egrius.pizzaShop.event.OrderPaidEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;

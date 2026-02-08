@@ -89,38 +89,8 @@ public interface PizzaRepository extends JpaRepository<Pizza, Long> {
     })
     List<Pizza> findPizzasByIngredientId(@Param("ingredientId") Long ingredientId);
 
+    Optional<Pizza> findByName(String name);
+
     boolean existsByName(String name);
 
 }
-
-/*
-SELECT JSON_OBJECT(
-    'id': p.id,
-    'name': p.name,
-    'description': p.description,
-    'imageUrl': p.image_url,
-    'category': p.category,
-    'cookingTimeMinutes': p.cooking_time_minutes,
-    'ingredients': (
-        SELECT JSON_ARRAYAGG(JSON_OBJECT('name': i.name))
-        FROM pizza_ingredients pi
-        JOIN ingredients i ON pi.ingredient_id = i.id
-        WHERE pi.pizza_id = p.id
-    ),
-    'sizes': (
-        SELECT JSON_ARRAYAGG(JSON_OBJECT(
-            'sizeName': st.size_name,
-            'displayName': st.display_name,
-            'diameterCm': st.diameter_cm,
-            'weightGrams': st.weight_grams,
-            'price': ps.price
-        ))
-        FROM pizza_sizes ps
-        JOIN size_templates st ON ps.size_template_id = st.id
-        WHERE ps.pizza_id = p.id
-        ORDER BY st.diameter_cm
-    )
-) as pizza_json
-FROM pizzas p
-WHERE p.id = :id
- */

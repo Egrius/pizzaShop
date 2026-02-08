@@ -40,7 +40,6 @@ public class PizzaPriceRecalculationService {
 
         log.info("Найдено {} пицц для перерасчета", pizzas.size());
 
-        // Пересчитываем цены для каждой пиццы
         pizzas.forEach(this::recalculatePizzaPrice);
 
         log.info("Перерасчет цен завершен для {} пицц", pizzas.size());

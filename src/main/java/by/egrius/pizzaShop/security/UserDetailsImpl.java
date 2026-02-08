@@ -59,4 +59,6 @@ public class UserDetailsImpl implements UserDetails {
     public String getFullName() {
         return user.getFullName();
     }
+
+    public User getUser() {return user;}
 }

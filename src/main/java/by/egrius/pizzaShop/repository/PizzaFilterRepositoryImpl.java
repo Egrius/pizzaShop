@@ -32,7 +32,6 @@ public class PizzaFilterRepositoryImpl implements PizzaFilterRepository {
 
         CriteriaQuery<PizzaCardDto> pizzaQuery = criteriaBuilder.createQuery(PizzaCardDto.class);
         Root<Pizza> pizza = pizzaQuery.from(Pizza.class);
-
         List<Predicate> pizzaPredicates= new ArrayList<>();
 
         pizzaPredicates.add(criteriaBuilder.isTrue(pizza.get("available")));

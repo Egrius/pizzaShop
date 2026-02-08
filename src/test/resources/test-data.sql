@@ -1,4 +1,5 @@
 -- Очистка
+DELETE FROM cart_items;
 DELETE FROM pizza_sizes;
 DELETE FROM pizza_ingredients;
 DELETE FROM pizzas;

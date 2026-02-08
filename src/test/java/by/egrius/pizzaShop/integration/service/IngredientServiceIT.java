@@ -102,7 +102,7 @@ class IngredientServiceIT extends TestContainerBase {
         void getAllIngredients_shouldReturnPageOfIngredients() {
             Pageable pageable_1 = PageRequest.of(0,3);
 
-            Page<IngredientReadDto> pageResult_1 = ingredientService.getAllIngredients(pageable_1);
+            Page<IngredientReadDto> pageResult_1 = ingredientService.getAllIngredients(0,3);
 
             assertNotNull(pageResult_1);
             List<IngredientReadDto> pageResult_1Content = pageResult_1.getContent();
@@ -120,7 +120,7 @@ class IngredientServiceIT extends TestContainerBase {
 
             Pageable pageable_2 = PageRequest.of(1,3);
 
-            Page<IngredientReadDto> pageResult_2 = ingredientService.getAllIngredients(pageable_2);
+            Page<IngredientReadDto> pageResult_2 = ingredientService.getAllIngredients(1,3);
 
             assertNotNull(pageResult_2);
             List<IngredientReadDto> pageResult_2Content = pageResult_2.getContent();

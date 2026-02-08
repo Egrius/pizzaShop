@@ -3,9 +3,6 @@ package by.egrius.pizzaShop.payment_imitation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.concurrent.CompletableFuture;
 
 @Service
@@ -34,40 +31,55 @@ public class PaymentService {
     // Метод с валидацией карты (простая логика)
     @Async("paymentProcessingExecutor")
     public CompletableFuture<PaymentResponseDto> processPaymentWithValidation(PaymentDetails paymentDetails) {
-        // 1. Базовая валидация карты
-        if (!isValidCardNumber(paymentDetails.cardNumber())) {
-            return CompletableFuture.completedFuture(PaymentResponseDto.failed("INVALID_CARD",
-                    "Invalid card number format"));
-        }
 
-        if (!isValidExpiryDate(paymentDetails.expiryDate())) {
-            return CompletableFuture.completedFuture(PaymentResponseDto.failed("EXPIRED_CARD",
-                    "Card has expired"));
-        }
+        log.info("=== ASYNC METHOD STARTED in thread: {} ===", Thread.currentThread().getName());
 
-        // 2. Проверка CVV
-        if (!isValidCvv(paymentDetails.cvv())) {
-            return CompletableFuture.completedFuture(PaymentResponseDto.failed("INVALID_CVV",
-                    "Invalid security code"));
-        }
+        try {
+            // 1. Базовая валидация карты
+            if (!isValidCardNumber(paymentDetails.cardNumber())) {
+                return CompletableFuture.completedFuture(PaymentResponseDto.failed("INVALID_CARD",
+                        "Invalid card number format"));
+            }
 
-        // 3. Имитация связи с банком
-        simulateNetworkDelay(2000, 4000);
+            if (!isValidExpiryDate(paymentDetails.expiryDate())) {
+                return CompletableFuture.completedFuture(PaymentResponseDto.failed("EXPIRED_CARD",
+                        "Card has expired"));
+            }
 
-        // 4. Проверка баланса (случайная)
-        boolean hasSufficientFunds = Math.random() > 0.3; // 70% успеха
+            // 2. Проверка CVV
+            if (!isValidCvv(paymentDetails.cvv())) {
+                return CompletableFuture.completedFuture(PaymentResponseDto.failed("INVALID_CVV",
+                        "Invalid security code"));
+            }
 
-        if (hasSufficientFunds) {
-            String transactionId = generateTransactionId();
-            return CompletableFuture.completedFuture(PaymentResponseDto.success(transactionId,
-                    "Payment of $" + paymentDetails.amount() + " approved"));
-        } else {
-            return CompletableFuture.completedFuture(PaymentResponseDto.failed("INSUFFICIENT_FUNDS",
-                    "Insufficient funds in account"));
+            // 3. Имитация связи с банком
+            simulateNetworkDelay(2000, 4000);
+
+            // 4. Проверка баланса (случайная)
+            boolean hasSufficientFunds = Math.random() > 0.3; // 70% успеха
+
+            if (hasSufficientFunds) {
+                String transactionId = generateTransactionId();
+                return CompletableFuture.completedFuture(PaymentResponseDto.success(transactionId,
+                        "Payment of " + paymentDetails.amount() + "р. approved"));
+            } else {
+                return CompletableFuture.completedFuture(PaymentResponseDto.failed("INSUFFICIENT_FUNDS",
+                        "Insufficient funds in account"));
+            }
+        } catch (PaymentInterruptedException e) {
+            // ОБРАБОТКА ПРЕРЫВАНИЯ
+            log.error("Payment processing was interrupted", e);
+            return CompletableFuture.completedFuture(PaymentResponseDto.failed("PAYMENT_INTERRUPTED",
+                    "Payment processing was interrupted"));
+        } catch (Exception e) {
+            // ОБРАБОТКА ЛЮБЫХ ДРУГИХ ОШИБОК
+            log.error("Unexpected error in payment processing", e);
+            return CompletableFuture.completedFuture(PaymentResponseDto.failed("SYSTEM_ERROR",
+                    "Payment processing failed"));
+        } finally {
+            log.info("=== ASYNC METHOD COMPLETED ===");
         }
     }
-
-    // ========== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ==========
 
     private void simulateNetworkDelay(int minMs, int maxMs) {
         try {
@@ -80,7 +92,7 @@ public class PaymentService {
     }
 
     private boolean isValidCardNumber(String cardNumber) {
-        if (cardNumber == null || cardNumber.length() != 16) {
+        if (cardNumber == null || cardNumber.isBlank() || cardNumber.length() != 16) {
             return false;
         }
         return cardNumber.matches("\\d{16}");

@@ -11,6 +11,7 @@ import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -54,7 +55,7 @@ public class Order {
     private DeliveryType deliveryType;
 
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, mappedBy = "order", cascade = CascadeType.ALL)
-    private List<OrderItem> orderItemList;
+    private List<OrderItem> orderItemList = new ArrayList<>();
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

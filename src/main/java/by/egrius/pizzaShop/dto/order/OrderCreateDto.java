@@ -1,16 +1,24 @@
 package by.egrius.pizzaShop.dto.order;
 
-import by.egrius.pizzaShop.dto.order_item.OrderItemCreateDto;
 import by.egrius.pizzaShop.entity.Address;
 import by.egrius.pizzaShop.entity.DeliveryType;
 import by.egrius.pizzaShop.payment_imitation.PaymentDetails;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import org.hibernate.validator.constraints.Length;
 
-import java.util.List;
 
 public record OrderCreateDto(
-        String orderNumber,
+        @NotNull
         Address deliveryAddress,
+
+        @Length(min = 0, max = 200)
         String customerNotes,
+
+        @NotNull
         DeliveryType deliveryType,
+
+        @NotNull
         PaymentDetails paymentDetails
 ) { }

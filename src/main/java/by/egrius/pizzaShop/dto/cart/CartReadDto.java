@@ -7,5 +7,5 @@ import java.util.List;
 
 public record CartReadDto(
         List<CartItemReadDto> cartItemReadDtos,
-        BigDecimal totalMoney
+        BigDecimal totalPrice
 ) { }

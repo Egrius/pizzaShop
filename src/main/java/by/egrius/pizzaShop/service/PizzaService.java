@@ -13,7 +13,6 @@ import by.egrius.pizzaShop.mapper.pizza.PizzaReadMapper;
 import by.egrius.pizzaShop.mapper.pizza.PizzaUpdateMapper;
 import by.egrius.pizzaShop.repository.*;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -27,7 +26,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -48,9 +46,6 @@ public class PizzaService {
     private final PizzaUpdateMapper pizzaUpdateMapper;
 
     private final PriceCalculator priceCalculator;
-
-    private final Validator validator;
-
 
     public List<PizzaCardDto> getPizzaCardsByFilter(PizzaFilter filter) {
         return pizzaFilterRepository.findByFilter(filter);

@@ -4,10 +4,8 @@ import by.egrius.pizzaShop.dto.ingredient.IngredientInfoDto;
 import by.egrius.pizzaShop.dto.pizza.*;
 import by.egrius.pizzaShop.dto.pizza_size.PizzaSizeInfoDto;
 import by.egrius.pizzaShop.dto.size_template.SizeTemplateInfoDto;
-import by.egrius.pizzaShop.entity.Ingredient;
-import by.egrius.pizzaShop.entity.Pizza;
-import by.egrius.pizzaShop.entity.PizzaSizeEnum;
-import by.egrius.pizzaShop.entity.SizeTemplate;
+import by.egrius.pizzaShop.entity.*;
+import by.egrius.pizzaShop.filter.PizzaFilter;
 import by.egrius.pizzaShop.integration.testcontainer.TestContainerBase;
 import by.egrius.pizzaShop.repository.*;
 import by.egrius.pizzaShop.service.PizzaService;
@@ -95,6 +93,89 @@ public class PizzaServiceIT extends TestContainerBase {
             assertThat(result.pizzaSizeReadDtos().get(0).price())
                     .isLessThan(result.pizzaSizeReadDtos().get(1).price());
         }
+    }
+
+    @Nested
+    class GetPizzaCardsByFilter {
+
+        @Autowired
+        private PizzaSizeRepository pizzaSizeRepository;
+
+        @BeforeEach
+        void setup () {
+            ingredientRepository.save(Ingredient.create("Моцарелла", "...", new BigDecimal("6.64"), true));
+            ingredientRepository.save(Ingredient.create("Цыплёнок", "...", new BigDecimal("10.0"), true));
+            ingredientRepository.save(Ingredient.create("Бекон", "...", new BigDecimal("1.60"), true));
+
+            sizeTemplateRepo.save(SizeTemplate.create(PizzaSizeEnum.SMALL, "25см", 25, 450, new BigDecimal("0.8")));
+            sizeTemplateRepo.save(SizeTemplate.create(PizzaSizeEnum.MEDIUM, "30см", 30, 650, BigDecimal.ONE));
+
+            PizzaCreateDto dto1= new PizzaCreateDto(
+                    "Маргарита",
+                    "Классическая пицца",
+                    "/images/margherita.jpg",
+                    "Классические",
+                    true,
+                    15,
+                    Map.of(1L, 200, 2L, 250, 3L, 40), // ingredientId -> weightGrams
+                    Set.of(1L, 2L) // sizeTemplateIds (SMALL, MEDIUM)
+            );
+
+            PizzaCreateDto dto2= new PizzaCreateDto(
+                    "Пицца_2",
+                    "Классическая пицца_2",
+                    "/images/margherita.jpg",
+                    "Классические",
+                    true,
+                    15,
+                    Map.of(1L, 200, 2L, 250), // ingredientId -> weightGrams
+                    Set.of(1L, 2L) // sizeTemplateIds (SMALL, MEDIUM)
+            );
+
+            pizzaService.createPizza(dto1);
+            pizzaService.createPizza(dto2);
+
+        }
+
+        @Test
+        void shouldReturnPizzasByCategory() {
+            PizzaFilter filter = new PizzaFilter(
+              null,
+              "Классические",
+              null,
+              null
+            );
+
+            List<PizzaCardDto> pizzaCardDtosFound = pizzaService.getPizzaCardsByFilter(filter);
+
+            assertNotNull(pizzaCardDtosFound);
+            assertEquals(2, pizzaCardDtosFound.size());
+            assertEquals(pizzaCardDtosFound.get(0).name(), "Маргарита");
+            assertEquals(pizzaCardDtosFound.get(1).name(), "Пицца_2");
+        }
+
+        @Test
+        void shouldReturnPizzasByPriceBounds() {
+
+            List<PizzaSize> pizzaSizes = pizzaSizeRepository.findAll();
+            BigDecimal minPrice = pizzaSizes.stream()
+                    .map(PizzaSize::getPrice)
+                    .min((el1, el2) -> el1.compareTo(el2))
+                    .orElseThrow();
+
+
+            PizzaFilter filter = new PizzaFilter(
+                    null,
+                    "Классические",
+                    minPrice,
+                    null
+            );
+
+            List<PizzaCardDto> pizzaCardDtosFound = pizzaService.getPizzaCardsByFilter(filter);
+            assertNotNull(pizzaCardDtosFound);
+            assertEquals(2, pizzaCardDtosFound.size());
+        }
+
     }
 
     @Nested

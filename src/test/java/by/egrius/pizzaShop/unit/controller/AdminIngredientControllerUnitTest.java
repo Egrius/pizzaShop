@@ -76,7 +76,7 @@ class AdminIngredientControllerUnitTest {
         Page<IngredientReadDto> page = new PageImpl<>(List.of(testIngredientReadDto));
         Pageable pageable = PageRequest.of(0, 20);
 
-        when(ingredientService.getAllIngredients(pageable)).thenReturn(page);
+        when(ingredientService.getAllIngredients(0,20)).thenReturn(page);
 
         // Act
         ResponseEntity<Page<IngredientReadDto>> response = ingredientController.getAllIngredients(0, 20);
@@ -88,7 +88,7 @@ class AdminIngredientControllerUnitTest {
         assertEquals(1, response.getBody().getContent().size());
         assertEquals(testIngredientReadDto, response.getBody().getContent().get(0));
 
-        verify(ingredientService, times(1)).getAllIngredients(pageable);
+        verify(ingredientService, times(1)).getAllIngredients(0,20);
     }
 
     @Test

@@ -6,6 +6,7 @@ import by.egrius.pizzaShop.entity.*;
 import by.egrius.pizzaShop.event.publisher.OrderEventPublisher;
 import by.egrius.pizzaShop.exception.EmptyCartException;
 import by.egrius.pizzaShop.exception.OrderNotFoundException;
+import by.egrius.pizzaShop.exception.OrderProcessingException;
 import by.egrius.pizzaShop.mapper.order.OrderReadMapper;
 import by.egrius.pizzaShop.payment_imitation.PaymentResponseDto;
 import by.egrius.pizzaShop.payment_imitation.PaymentService;
@@ -22,6 +23,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 
 @Service
@@ -48,11 +50,13 @@ public class OrderService {
             throw new EmptyCartException("Невозможно создать заказ из пустой корзины");
         }
 
+        if(orderCreateDto.deliveryType().equals(DeliveryType.DELIVERY) && orderCreateDto.deliveryAddress() == null) {
+            throw new OrderProcessingException("Невозможно сделать заказ с доставкой без указанного адреса");
+        }
+
         Order order = new Order();
 
-        Long orderId = order.getId();
-
-        order.setOrderNumber(generateOrderNumber(orderId));
+        order.setOrderNumber(generateOrderNumber());
         order.setUser(user);
         order.setDeliveryType(orderCreateDto.deliveryType());
         order.setDeliveryAddress(orderCreateDto.deliveryAddress());
@@ -78,10 +82,13 @@ public class OrderService {
         order.setTotalPrice(total);
         order.setCreatedAt(LocalDateTime.now());
 
-        orderRepository.save(order);
+        Order saved = orderRepository.save(order);
+
+        Long orderId = saved.getId();
 
         OrderReadDto orderReadDto = orderReadMapper.map(order);
 
+        // Имитацию проверки баланса добавить
         paymentService.processPaymentWithValidation(orderCreateDto.paymentDetails())
                 .whenComplete((paymentResponseDto, throwable) -> {
                     if(throwable != null) {
@@ -99,43 +106,47 @@ public class OrderService {
 
     @Transactional
     public void handlePaymentResult(Long orderId, PaymentResponseDto paymentResponseDto, Throwable throwable, String orderNumber, BigDecimal totalAmount) {
+        log.info("=== handlePaymentResult START ===");
+        log.info("Order ID: {}", orderId);
+        log.info("PaymentResponseDto: {}", paymentResponseDto);
+        log.info("Success: {}", paymentResponseDto != null ? paymentResponseDto.success() : "null");
+        log.info("Error code: {}", paymentResponseDto != null ? paymentResponseDto.errorCode() : "null");
+        log.info("Message: {}", paymentResponseDto != null ? paymentResponseDto.message() : "null");
+        log.info("Throwable: {}", throwable != null ? throwable.getMessage() : "null");
+
         Order order = orderRepository.findById(orderId).orElseThrow(
-                () -> new OrderNotFoundException("Заказ с ID: " + orderId + " не найден в ходе обработки результата платежа"));
+                () -> new OrderNotFoundException("Заказ с ID: " + orderId + " не найден"));
 
         if (throwable != null) {
             log.error("Payment processing failed for order ID: {}", orderId, throwable);
             order.setStatus(OrderStatus.PAYMENT_FAILED);
 
         } else if (paymentResponseDto != null && paymentResponseDto.success()) {
-            log.info("Payment successful for order ID: {}, transaction: {}",
-                    orderId, paymentResponseDto.transactionId());
-
+            log.info("Payment SUCCESSFUL - clearing cart");
             order.setStatus(OrderStatus.PAID);
-
             cartItemRepository.deleteByUser(order.getUser());
+            log.info("Cart cleared for user: {}", order.getUser().getId());
 
-            log.info("Order {} marked as PAID, cart cleared", orderId);
-
-            // Событие
-            orderEventPublisher.publishOrderPaidEvent(orderId, orderNumber, totalAmount);
+            orderEventPublisher.publishOrderPaidEvent(orderId, order.getOrderNumber(), order.getTotalPrice());
 
         } else if (paymentResponseDto != null && !paymentResponseDto.success()) {
-            log.warn("Payment declined for order ID: {}: {}",
-                    orderId, paymentResponseDto.message());
-
+            log.info("Payment FAILED - keeping cart");
             order.setStatus(OrderStatus.PAYMENT_FAILED);
+            // Карзина НЕ очищается
 
         } else {
-            log.error("Invalid parameters in handlePaymentResult for order ID: {}. " +
-                    "Both paymentResponseDto and throwable are null", orderId);
+            log.error("Invalid parameters");
             throw new IllegalStateException("Invalid payment result state");
         }
 
         orderRepository.save(order);
+        log.info("Order status updated to: {}", order.getStatus());
+        log.info("=== handlePaymentResult END ===");
     }
 
-    private String generateOrderNumber(Long orderId) {
-        String date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMdd"));
-        return String.format("ORDER-%s-%04d", date, orderId % 10000);
+    private String generateOrderNumber() {
+        String date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMddHHmmss"));
+        String random = String.format("%04d", ThreadLocalRandom.current().nextInt(10000));
+        return String.format("ORD-%s-%s", date, random);
     }
 }

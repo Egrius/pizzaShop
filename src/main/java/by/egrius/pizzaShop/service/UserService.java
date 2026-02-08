@@ -19,6 +19,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Сервис для управления пользователями.
+ * Обеспечивает добавление новых пользователей в БД, позволяет редактировать информацию профиля.
+ */
+
 @Service
 @Slf4j
 @Transactional(readOnly = true)
@@ -29,17 +34,19 @@ public class UserService {
     private final UserReadMapper userReadMapper;
     private final PasswordEncoder passwordEncoder;
 
-    private String buildChangeLog(boolean nameChanged, User user) {
-        List<String> changes = new ArrayList<>();
-        if (nameChanged) changes.add("Имя: " + user.getFullName());
-        return String.join(", ", changes);
-    }
-
     public UserReadDto getUserById(Long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("Пользователь не найден"));
         return userReadMapper.map(user);
     }
 
+    /**
+     * Создает нового пользователя, проверяя уникальность email и phone.
+     *
+     * @param userCreateDto DTO с данными пользователя.
+     * @return DTO для чтения пользователя, содержащее определённую информацию о пользователе.
+     * @throws UserAlreadyExistsException если пользователь с переданным email либо phone уже существует,
+     * причина указывается непосредственно в ошибке.
+     */
     @Transactional
     public UserReadDto createUser(UserCreateDto userCreateDto) {
 
@@ -119,5 +126,11 @@ public class UserService {
 
         log.info("Удалён пользователь с ID: {} , Имя: {}",
                 user.getId(), user.getFullName());
+    }
+
+    private String buildChangeLog(boolean nameChanged, User user) {
+        List<String> changes = new ArrayList<>();
+        if (nameChanged) changes.add("Имя: " + user.getFullName());
+        return String.join(", ", changes);
     }
 }

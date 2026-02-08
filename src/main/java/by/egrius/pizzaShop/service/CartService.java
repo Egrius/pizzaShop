@@ -3,12 +3,12 @@ package by.egrius.pizzaShop.service;
 import by.egrius.pizzaShop.dto.cart.CartReadDto;
 import by.egrius.pizzaShop.dto.cart_item.CartItemCreateDto;
 import by.egrius.pizzaShop.dto.cart_item.CartItemReadDto;
-import by.egrius.pizzaShop.dto.order.OrderCreateDto;
 import by.egrius.pizzaShop.entity.CartItem;
 import by.egrius.pizzaShop.entity.Pizza;
 import by.egrius.pizzaShop.entity.PizzaSize;
 import by.egrius.pizzaShop.entity.User;
 import by.egrius.pizzaShop.exception.CartItemNotFoundException;
+import by.egrius.pizzaShop.exception.EmptyCartException;
 import by.egrius.pizzaShop.exception.PizzaNotFoundException;
 import by.egrius.pizzaShop.exception.PizzaSizeNotFoundException;
 import by.egrius.pizzaShop.mapper.cart_item.CartItemReadMapper;
@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -35,6 +36,10 @@ public class CartService {
 
     public CartReadDto getCart(User user) {
         List<CartItem> items = cartItemRepository.findByUser(user);
+
+        if(items.isEmpty()) {
+            return new CartReadDto(Collections.emptyList(), BigDecimal.ZERO);
+        }
 
         List<CartItemReadDto> itemDtos = items.stream()
                 .map(cartItemReadMapper::map)
@@ -93,7 +98,9 @@ public class CartService {
 
     @Transactional
     public void clearCart(User user) {
-        cartItemRepository.deleteByUser(user);
+        if(cartItemRepository.existsByUser(user)) {
+            cartItemRepository.deleteByUser(user);
+        }
     }
 
     private BigDecimal calculateTotal(List<CartItem> items) {

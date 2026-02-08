@@ -11,7 +11,6 @@ import by.egrius.pizzaShop.mapper.ingredient.IngredientReadMapper;
 import by.egrius.pizzaShop.mapper.ingredient.IngredientUpdateMapper;
 import by.egrius.pizzaShop.repository.IngredientRepository;
 import by.egrius.pizzaShop.repository.PizzaIngredientRepository;
-import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +28,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Сервис для управления ингредиентами.
+ * Позволяет взаимодействовать с ингредиентами, предусматривает перерасчёт цен
+ * в случае изменения цены ингредиента.
+ */
+
 @Service
 @Transactional(readOnly = true)
 @Slf4j
@@ -39,8 +44,6 @@ public class IngredientService {
     private final IngredientReadMapper ingredientReadMapper;
     private final IngredientCreateMapper ingredientCreateMapper;
     private final IngredientUpdateMapper ingredientUpdateMapper;
-   // private final PizzaPriceRecalculationService pizzaPriceRecalculationService;
-    private final EntityManager entityManager;
 
     private final IngredientEventPublisher ingredientEventPublisher;
 
@@ -111,6 +114,7 @@ public class IngredientService {
         if(ingredientRepository.existsByName(ingredientUpdateDto.name())) {
             log.warn("Попытка создания ингредиента с существующим именем \"{}\"",
                     ingredientUpdateDto.name());
+
             throw new IngredientAlreadyExistsException("Ингредиент с именем \""
                     + ingredientUpdateDto.name() + "\" уже существует в БД");
         }
@@ -119,8 +123,6 @@ public class IngredientService {
         Long version = ingredientToUpdate.getVersion();
 
         ingredientUpdateMapper.map(ingredientUpdateDto, ingredientToUpdate);
-
-       // entityManager.flush();
 
         log.info("Ингредиент с id {} успешно обновлен", id);
 
@@ -132,9 +134,7 @@ public class IngredientService {
             log.info("Цена изменилась ({} -> {}), публикуем событие об изменении цены",
                     priceBefore, priceAfter);
 
-            ingredientEventPublisher.publishIngredientPriceChangedEvent(ingredientReadDto.id(), ingredientReadDto.version() + 1, priceAfter, priceBefore);
-
-            //pizzaPriceRecalculationService.recalculatePricesForIngredientAsync(id);
+            ingredientEventPublisher.publishIngredientPriceChangedEvent(ingredientReadDto.id(), ingredientToUpdate.getVersion() + 1, priceAfter, priceBefore);
         }
 
         return ingredientReadDto;

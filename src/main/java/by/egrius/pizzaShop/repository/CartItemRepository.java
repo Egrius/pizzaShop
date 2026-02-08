@@ -15,6 +15,9 @@ import java.util.Optional;
 @Repository
 public interface CartItemRepository extends JpaRepository<CartItem, Long> {
 
+    @Query("SELECT COUNT(c) FROM CartItem c WHERE c.user = :user")
+    int countItemsByUser(@Param("user") User user);
+
     List<CartItem> findByUser(User user);
 
     Optional<CartItem> findByUserAndPizzaAndPizzaSize(
@@ -24,6 +27,6 @@ public interface CartItemRepository extends JpaRepository<CartItem, Long> {
 
     int deleteByUserAndId(User user, Long id);
 
-    @Query("SELECT COUNT(c) FROM CartItem c WHERE c.user = :user")
-    int countItemsByUser(@Param("user") User user);
+    boolean existsByUser(User user);
+
 }

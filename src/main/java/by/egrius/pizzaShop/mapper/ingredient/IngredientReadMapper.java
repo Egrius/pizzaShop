@@ -15,8 +15,8 @@ public class IngredientReadMapper implements BaseMapper<Ingredient, IngredientRe
                 object.getDescription(),
                 object.getPrice(),
                 object.isAvailable(),
-                object.getCreatedAt(),
-                object.getVersion()
+                object.getCreatedAt()
+               // object.getVersion()
         );
     }
 }
