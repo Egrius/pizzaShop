@@ -74,7 +74,7 @@ class OrderServiceFlowIT extends TestContainerBase {
     private PizzaSize TEST_PIZZA_SIZE_MEDIUM;
 
     private final Address MOCK_ADDRESS =  new Address("ул. Тестовая", "1", "1", "1", "Минск");
-    private final PaymentDetails MOCK_PAYMENT_DETAILS = new PaymentDetails("4111111111111111", "TEST USER", "12/30", "123", BigDecimal.valueOf(50.0));
+    private final PaymentDetails MOCK_PAYMENT_DETAILS = new PaymentDetails("4111111111111111", "TEST USER", "12/30", "123");
 
     @BeforeEach
     void setup() {
@@ -132,8 +132,7 @@ class OrderServiceFlowIT extends TestContainerBase {
                 "4111111111111111", // Карта с вероятностью успеха
                 "TEST USER",
                 "12/30",
-                "123",
-                BigDecimal.valueOf(25.0) // Маленькая сумма для теста
+                "123"
         );
 
         OrderCreateDto orderCreateDto = new OrderCreateDto(
@@ -190,7 +189,7 @@ class OrderServiceFlowIT extends TestContainerBase {
         Thread thread1 = new Thread(() -> {
             OrderCreateDto order1 = new OrderCreateDto(
                     MOCK_ADDRESS, "Order 1", DeliveryType.DELIVERY,
-                    new PaymentDetails("4111111111111111", "User 1", "12/30", "123", BigDecimal.valueOf(50.0))
+                    new PaymentDetails("4111111111111111", "User 1", "12/30", "123")
             );
             orderService.createOrderFromCart(customer, order1);
         });
@@ -198,7 +197,7 @@ class OrderServiceFlowIT extends TestContainerBase {
         Thread thread2 = new Thread(() -> {
             OrderCreateDto order2 = new OrderCreateDto(
                     MOCK_ADDRESS, "Order 2", DeliveryType.DELIVERY,
-                    new PaymentDetails("5555555555554444", "User 2", "12/30", "123", BigDecimal.valueOf(25.0))
+                    new PaymentDetails("5555555555554444", "User 2", "12/30", "123")
             );
             orderService.createOrderFromCart(customer2, order2);
         });

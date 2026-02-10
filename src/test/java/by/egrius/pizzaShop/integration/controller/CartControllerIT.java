@@ -91,11 +91,8 @@ class CartControllerIT extends TestContainerBase {
 
     private static final String BEARER_PREFIX = "Bearer ";
 
-    private Pizza TEST_PIZZA;
-    private PizzaSize TEST_PIZZA_SIZE_MEDIUM;
-
     private final Address MOCK_ADDRESS =  new Address("ул. Тестовая", "1", "1", "1", "Минск");
-    private final PaymentDetails MOCK_PAYMENT_DETAILS = new PaymentDetails("4111111111111111", "TEST USER", "12/30", "123", BigDecimal.valueOf(50.0));
+    private final PaymentDetails MOCK_PAYMENT_DETAILS = new PaymentDetails("4111111111111111", "TEST USER", "12/30", "123");
 
     private User customer;
     private String customerToken;
@@ -607,5 +604,4 @@ class CartControllerIT extends TestContainerBase {
         }
 
     }
-
 }

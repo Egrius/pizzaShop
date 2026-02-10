@@ -77,7 +77,7 @@ public class OrderServiceUnitIT extends TestContainerBase {
 
     private Pizza TEST_PIZZA;
     private PizzaSize TEST_PIZZA_SIZE_MEDIUM;
-    private final PaymentDetails MOCK_PAYMENT_DETAILS = new PaymentDetails("4111111111111111", "TEST USER", "12/30", "123", BigDecimal.valueOf(50.0));
+    private final PaymentDetails MOCK_PAYMENT_DETAILS = new PaymentDetails("4111111111111111", "TEST USER", "12/30", "123");
 
     private final Address MOCK_ADDRESS =  new Address("ул. Тестовая", "1", "1", "1", "Минск");
 
@@ -204,12 +204,10 @@ public class OrderServiceUnitIT extends TestContainerBase {
         setupCartItem(customer2, 2);
 
         PaymentDetails details1 = new PaymentDetails(
-                "4111111111111111", "John Doe", "12/30", "123", BigDecimal.valueOf(50.0)
-        );
+                "4111111111111111", "John Doe", "12/30", "123");
 
         PaymentDetails details2 = new PaymentDetails(
-                "5555555555554444", "Jane Smith", "12/30", "456", BigDecimal.valueOf(50.0)
-        );
+                "5555555555554444", "Jane Smith", "12/30", "456");
 
         // Мокаем платежи с разным временем выполнения
         AtomicBoolean customer1PaymentStarted = new AtomicBoolean(false);

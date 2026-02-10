@@ -61,7 +61,7 @@ public class PaymentService {
             if (hasSufficientFunds) {
                 String transactionId = generateTransactionId();
                 return CompletableFuture.completedFuture(PaymentResponseDto.success(transactionId,
-                        "Payment of " + paymentDetails.amount() + "р. approved"));
+                        "Payment approved"));
             } else {
                 return CompletableFuture.completedFuture(PaymentResponseDto.failed("INSUFFICIENT_FUNDS",
                         "Insufficient funds in account"));

@@ -6,6 +6,5 @@ public record PaymentDetails(
         String cardNumber,      // "4111111111111111"
         String cardHolder,      // "IVAN IVANOV"
         String expiryDate,      // "12/25"
-        String cvv,            // "123"
-        BigDecimal amount      // new BigDecimal("24.99")
+        String cvv            // "123"
 ) {}

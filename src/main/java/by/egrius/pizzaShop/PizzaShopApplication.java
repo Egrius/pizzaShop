@@ -14,4 +14,5 @@ public class PizzaShopApplication {
 
 // TODO Контроллер для шаблонов размеров
 // TODO Система заказов
+// TODO оптимизация запросов, кэш
 // TODO Система отзывов
