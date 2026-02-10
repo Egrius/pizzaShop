@@ -3,6 +3,8 @@ package by.egrius.pizzaShop.service;
 import by.egrius.pizzaShop.dto.ingredient.IngredientCreateDto;
 import by.egrius.pizzaShop.dto.ingredient.IngredientReadDto;
 import by.egrius.pizzaShop.dto.ingredient.IngredientUpdateDto;
+import by.egrius.pizzaShop.dto.pizza.PizzaCreateDto;
+import by.egrius.pizzaShop.dto.pizza.PizzaReadDto;
 import by.egrius.pizzaShop.entity.Ingredient;
 import by.egrius.pizzaShop.event.publisher.IngredientEventPublisher;
 import by.egrius.pizzaShop.exception.IngredientAlreadyExistsException;
@@ -11,6 +13,7 @@ import by.egrius.pizzaShop.mapper.ingredient.IngredientReadMapper;
 import by.egrius.pizzaShop.mapper.ingredient.IngredientUpdateMapper;
 import by.egrius.pizzaShop.repository.IngredientRepository;
 import by.egrius.pizzaShop.repository.PizzaIngredientRepository;
+import by.egrius.pizzaShop.repository.PizzaRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,11 +32,36 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Сервис для управления ингредиентами.
- * Позволяет взаимодействовать с ингредиентами, предусматривает перерасчёт цен
- * в случае изменения цены ингредиента.
+ * Сервис для управления ингредиентами ({@link Ingredient}).
+ * <p>
+ * <b>Основные функции:</b>
+ * <ul>
+ *   <li>CRUD операции над ингредиентами</li>
+ *   <li>Пагинация и поиск по ID</li>
+ *   <li>Публикация событий при изменении цены ингредиента</li>
+ * </ul>
+ * <p>
+ * <b>Ключевые особенности:</b>
+ * <ul>
+ *   <li>При изменении цены ингредиента автоматически уведомляет систему
+ *       через {@link IngredientEventPublisher} для перерасчёта цен пицц</li>
+ *   <li>Запрещает удаление ингредиентов, используемых в существующих пиццах</li>
+ *   <li>Гарантирует уникальность названий ингредиентов</li>
+ * </ul>
+ * <p>
+ * <b>Ключевые зависимости:</b>
+ * <ul>
+ *   <li>{@link IngredientRepository} - доступ к данным</li>
+ *   <li>{@link IngredientEventPublisher} - публикация событий об изменении цены</li>
+ *   <li>{@link PizzaIngredientRepository} - проверка использования ингредиентов</li>
+ * </ul>
+ *
+ * @see by.egrius.pizzaShop.controller.admin.AdminIngredientController
+ * @see by.egrius.pizzaShop.event.listener.IngredientPriceChangedEventListener
+ * @see IngredientCreateDto
+ * @see IngredientUpdateDto
+ * @see IngredientReadDto
  */
-
 @Service
 @Transactional(readOnly = true)
 @Slf4j
@@ -47,11 +75,34 @@ public class IngredientService {
 
     private final IngredientEventPublisher ingredientEventPublisher;
 
+    /**
+     * Возвращает страницу со всеми ингредиентами.
+     * <p>
+     * Используется для отображения списка ингредиентов в админ-панели.
+     *
+     * @param page номер страницы (начинается с 0)
+     * @param size количество элементов на странице
+     * @return {@link Page} с {@link IngredientReadDto}
+     *
+     * @see #getIngredientsByIds(Set)
+     */
     public Page<IngredientReadDto> getAllIngredients(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return ingredientRepository.findAll(pageable).map(ingredientReadMapper::map);
     }
 
+    /**
+     * Находит ингредиенты по набору ID.
+     * <p>
+     * Используется при создании/обновлении пиццы для валидации существования ингредиентов.
+     *
+     * @param ingredientIds набор ID ингредиентов
+     * @return список {@link IngredientReadDto}
+     * @throws IllegalArgumentException если передан пустой список ID
+     * @throws EntityNotFoundException если не найдены один или несколько ингредиентов
+     *
+     * @see PizzaService#createPizza(PizzaCreateDto)
+     */
     public List<IngredientReadDto> getIngredientsByIds(Set<Long> ingredientIds) {
         log.debug("Запрос ингредиентов по {} IDs", ingredientIds.size());
 
@@ -104,8 +155,27 @@ public class IngredientService {
         return ingredientReadMapper.map(ingredient);
     }
 
-    // TODO Переделать на события, добавить паблишера, который закинет ивент при изменении цены,
-    // TODO обрабатывать событие только после коммита транзакции, сверять версии для избежания гонки
+    /**
+     * Обновляет ингредиент, включая публикацию события при изменении цены.
+     * <p>
+     * <b>Особенности:</b>
+     * <ul>
+     *   <li>Проверяет уникальность нового имени</li>
+     *   <li>При изменении цены публикует {@link by.egrius.pizzaShop.event.IngredientPriceChangedEvent}</li>
+     *   <li>Использует optimistic locking через поле {@code version}</li>
+     * </ul>
+     * <p>
+     * TODO: Обрабатывать событие только после коммита транзакции
+     * TODO: Добавить проверку версий для предотвращения гонок
+     *
+     * @param id ID обновляемого ингредиента
+     * @param ingredientUpdateDto DTO с новыми данными
+     * @return {@link IngredientReadDto} обновлённого ингредиента
+     * @throws EntityNotFoundException если ингредиент не найден
+     * @throws IngredientAlreadyExistsException если новое имя уже используется
+     *
+     * @see IngredientEventPublisher#publishIngredientPriceChangedEvent(Long, Long, BigDecimal, BigDecimal)
+     */
     @Transactional
     public IngredientReadDto updateIngredient(Long id, IngredientUpdateDto ingredientUpdateDto) {
         Ingredient ingredientToUpdate = ingredientRepository.findById(id).orElseThrow(
@@ -140,6 +210,18 @@ public class IngredientService {
         return ingredientReadDto;
     }
 
+    /**
+     * Удаляет ингредиент, если он не используется в пиццах.
+     * <p>
+     * <b>Бизнес-правило:</b> Нельзя удалить ингредиент, который используется
+     * хотя бы в одной пицце (даже если пицца неактивна).
+     *
+     * @param id ID удаляемого ингредиента
+     * @throws EntityNotFoundException если ингредиент не найден
+     * @throws IllegalStateException если ингредиент используется в пиццах
+     *
+     * @see PizzaIngredientRepository#countPizzaUses(Long)
+     */
     @Transactional
     public void deleteIngredient(Long id) {
         log.info("Передано id на удаление ингредиента - {}", id);

@@ -128,6 +128,13 @@ public class UserService {
                 user.getId(), user.getFullName());
     }
 
+    /**
+     * Утилитарный метод для вывода изменений на консоль.
+     *
+     * @param nameChanged изменённое имя пользователя
+     * @param user сущность пользователя
+     * @return
+     */
     private String buildChangeLog(boolean nameChanged, User user) {
         List<String> changes = new ArrayList<>();
         if (nameChanged) changes.add("Имя: " + user.getFullName());

@@ -9,6 +9,10 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Map;
 
+/**
+ * Калькулятор для расчёта цены создаваемой пиццы.
+ * Определяет константы для цен составляющих пиццу компонентов.
+ */
 @Component
 public class PriceCalculator {
 
@@ -21,7 +25,6 @@ public class PriceCalculator {
 
     // Процентное соотношение (исправлено)
     private static final BigDecimal DOUGH_PERCENTAGE = new BigDecimal("0.45");    // 45% теста
-    private static final BigDecimal INGREDIENTS_PERCENTAGE = new BigDecimal("0.45"); // 45% ингредиентов
     private static final BigDecimal SAUCE_PERCENTAGE = new BigDecimal("0.10");    // 10% соуса
 
     // Минимальные цены

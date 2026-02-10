@@ -6,6 +6,7 @@ import by.egrius.pizzaShop.dto.pizza_size.PizzaSizeInfoDto;
 import by.egrius.pizzaShop.dto.size_template.SizeTemplateInfoDto;
 import by.egrius.pizzaShop.entity.*;
 import by.egrius.pizzaShop.exception.PizzaAlreadyExistsException;
+import by.egrius.pizzaShop.exception.PizzaNotFoundException;
 import by.egrius.pizzaShop.exception.PriceCalculationException;
 import by.egrius.pizzaShop.filter.PizzaFilter;
 import by.egrius.pizzaShop.mapper.pizza.PizzaCreateMapper;
@@ -24,12 +25,36 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * Сервис для управления сущностями пиццы ({@link Pizza}).
+ * <p>
+ * <b>Основные функции:</b>
+ * <ul>
+ *   <li>CRUD операции над пиццами</li>
+ *   <li>Фильтрация и пагинация пицц</li>
+ *   <li>Расчёт цен с учётом ингредиентов и размеров</li>
+ *   <li>Кэширование детальной информации о пиццах</li>
+ * </ul>
+ * <p>
+ * <b>Ключевые зависимости:</b>
+ * <ul>
+ *   <li>{@link PizzaRepository} - доступ к данным</li>
+ *   <li>{@link PriceCalculator} - расчёт цен</li>
+ *   <li>{@link IngredientRepository} - управление ингредиентами</li>
+ * </ul>
+ *
+ * @see by.egrius.pizzaShop.controller.customer.PublicPizzaController
+ * @see by.egrius.pizzaShop.controller.admin.AdminPizzaController
+ * @see PizzaCreateDto
+ * @see PizzaReadDto
+ */
 @Service
 @Slf4j
 @Transactional(readOnly = true)
@@ -47,10 +72,25 @@ public class PizzaService {
 
     private final PriceCalculator priceCalculator;
 
+    /**
+     * Ищет пиццы по переданному фильтру.
+     * @see PizzaFilter
+     *
+     * @param filter фильтр
+     * @return список соответсвующих фильтру пицц.
+     */
     public List<PizzaCardDto> getPizzaCardsByFilter(PizzaFilter filter) {
         return pizzaFilterRepository.findByFilter(filter);
     }
 
+    /**
+     * Ищет доступные пиццы и возвращает их в виде карточек (минимальная необходимая информация).
+     * @see PizzaCardDto
+     *
+     * @param pageNumber номер слайса
+     * @param pageSize размер слайса
+     * @return слайс с карточками пицц
+     */
     public Slice<PizzaCardDto> getPizzaCardsSlice(int pageNumber, int pageSize) {
 
         if(pageNumber < 0 || pageSize <= 0) throw new IllegalArgumentException("Некорректные данные для номера либо размера страницы");
@@ -71,6 +111,15 @@ public class PizzaService {
                 ));
     }
 
+    /**
+     * Возвращает полную информацию о пицце с кэшированием результата.
+     *
+     * @param id идентификатор пиццы в БД
+     * @return {@link PizzaCardDetailsDto} с полной информацией о пицце
+     * @throws EntityNotFoundException если пицца не найдена
+     *
+     * @see PizzaCardDetailsDto
+     */
     @Cacheable(value = "pizzaCardDetails", key = "#id")
     public PizzaCardDetailsDto getPizzaDetails(Long id) {
         log.info("Вызов getPizzaDetails с id={} (id==null? {})", id, id == null);
@@ -102,6 +151,35 @@ public class PizzaService {
         );
     }
 
+    /**
+     * Создаёт новую пиццу в системе.
+     * <p>
+     * <b>Бизнес-правила:</b>
+     * <ul>
+     *   <li>Имя пиццы должно быть уникальным</li>
+     *   <li>Пицца должна содержать минимум 1 ингредиент</li>
+     *   <li>Должен быть указан хотя бы один размер</li>
+     *   <li>Цена рассчитывается автоматически на основе ингредиентов</li>
+     * </ul>
+     * <p>
+     * <b>Процесс создания:</b>
+     * <ol>
+     *   <li>Валидация входных данных</li>
+     *   <li>Проверка уникальности имени</li>
+     *   <li>Сохранение базовой информации о пицце</li>
+     *   <li>Добавление ингредиентов с весами</li>
+     *   <li>Расчёт цен для каждого размера</li>
+     * </ol>
+     *
+     * @param createDto DTO с данными для создания пиццы
+     * @return {@link PizzaReadDto} созданной пиццы
+     * @throws PizzaAlreadyExistsException если пицца с таким именем уже существует
+     * @throws EntityNotFoundException если не найдены ингредиенты или размеры
+     * @throws IllegalArgumentException если пицца создаётся без ингредиентов или размеров
+     *
+     * @see #addIngredientsWithWeights(Pizza, Map, Map)
+     * @see #addSizesToPizza(Pizza, List, Map, Map)
+     */
     @Transactional
     public PizzaReadDto createPizza(PizzaCreateDto createDto) {
 
@@ -185,6 +263,14 @@ public class PizzaService {
         return pizzaReadMapper.map(savedPizza);
     }
 
+    /**
+     * Добавляет ингредиенты с весами к пицце.
+     * Используется только в {@link #createPizza(PizzaCreateDto)}.
+     *
+     * @param pizza пицца для добавления ингредиентов
+     * @param ingredientWeights карта [ID ингредиента → вес в граммах]
+     * @param ingredientMap карта [ID ингредиента → сущность {@link Ingredient}]
+     */
     private void addIngredientsWithWeights(Pizza pizza,
                                            Map<Long, Integer> ingredientWeights,
                                            Map<Long, Ingredient> ingredientMap) {
@@ -208,8 +294,8 @@ public class PizzaService {
             pizzaIngredient.setIngredient(ingredient);
             pizzaIngredient.setWeightGrams(currentIngredientWeight);
 
-           // PizzaIngredient saved = pizzaIngredientRepository.save(pizzaIngredient);
-
+            // Пицца сохраняется каскадно благодаря CascadeType.PERSIST
+            // pizzaIngredientRepository.save() не требуется
             pizza.getPizzaIngredients().add(pizzaIngredient);
 
             addedCount++;
@@ -222,9 +308,19 @@ public class PizzaService {
                 addedCount, pizza.getName());
     }
 
+    /**
+     * Добавляет размеры к пицце с расчетом цены под конкретный размер, используя {@link PriceCalculator}.
+     * Используется только в {@link #createPizza(PizzaCreateDto)}.
+     *
+     * @param pizza пицца для добавления ингредиентов
+     * @param foundSizeTemplates найденные шаблоны размеров
+     * @param ingredientMap карта [ID ингредиента → сущность {@link Ingredient}]
+     * @param ingredientWeights карта [ID ингредиента → вес в граммах]
+     * @throws PriceCalculationException если произошла ошибка в калькуляторе
+     */
     private void  addSizesToPizza(Pizza pizza,
                                   List<SizeTemplate> foundSizeTemplates,
-                                  Map<Long, Ingredient> ingredientsMap,
+                                  Map<Long, Ingredient> ingredientMap,
                                   Map<Long, Integer> ingredientWeights) {
 
         log.debug("Добавление размеров к пицце '{}', шаблонов: {}",
@@ -233,14 +329,13 @@ public class PizzaService {
         for (SizeTemplate template : foundSizeTemplates) {
             try {
 
-                // Нужен PizzaPriceCalculator!
-                BigDecimal price = priceCalculator.calculatePrice(template, ingredientsMap, ingredientWeights);
+                BigDecimal price = priceCalculator.calculatePrice(template, ingredientMap, ingredientWeights);
 
                 log.debug("Рассчитана цена для размера '{}': {} руб.",
                         template.getDisplayName(), price);
 
                 PizzaSize pizzaSize = PizzaSize.create(pizza, template, price, true);
-                //PizzaSize saved = pizzaSizeRepository.save(pizzaSize);
+
                 pizza.getPizzaSizes().add(pizzaSize);
 
                 log.trace("Создан размер: {} ({}), цена: {} руб.",
@@ -258,16 +353,23 @@ public class PizzaService {
                 foundSizeTemplates.size(), pizza.getName());
     }
 
+    /**
+     * Обновляет базовую информацию о пицце.
+     *
+     * @param id идентификатор обновляемой пиццы
+     * @param updateDto DTO для обновления пиццы
+     * @return DTO, содержащее обновлённую о пицце информацию
+     * @throws PizzaNotFoundException если пицца не найдена по переданному идентификатору
+     * @throws PizzaAlreadyExistsException если новое имя пиццы уже существует в БД
+     */
     @Transactional
     @CacheEvict(value = "pizzaCardDetails", key = "#id")
     public PizzaUpdateResponseDto updatePizzaById(Long id, PizzaUpdateDto updateDto) {
 
-      //  if (id == null) throw new IllegalArgumentException("ID не может быть null");
-
         log.info("Передано DTO на обновление пиццы. Имя для обновления - \"{}\", id - {}", updateDto.name(), id);
 
 
-        Pizza pizzaToUpdate = pizzaRepository.findById(id).orElseThrow(() -> new EntityNotFoundException(
+        Pizza pizzaToUpdate = pizzaRepository.findById(id).orElseThrow(() -> new PizzaNotFoundException(
                 String.format("Пицца для обновления с id %d не найдена в БД", id)));
 
 
@@ -288,7 +390,7 @@ public class PizzaService {
                 pizzaToUpdate.getCategory(),
                 pizzaToUpdate.isAvailable(),
                 pizzaToUpdate.getCookingTimeMinutes(),
-                pizzaToUpdate.getCreatedAt()
+                LocalDateTime.now()
         );
     }
 
