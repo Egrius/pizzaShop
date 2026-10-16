@@ -28,12 +28,13 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-	implementation 'org.springframework.boot:spring-boot-docker-compose'
-	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.1'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.0'
+
+
+	implementation 'org.springframework:spring-messaging'
 
 	// БД
 	runtimeOnly 'org.postgresql:postgresql'
-
 
 	// Jwt
 	implementation("io.jsonwebtoken:jjwt-api:0.13.0")

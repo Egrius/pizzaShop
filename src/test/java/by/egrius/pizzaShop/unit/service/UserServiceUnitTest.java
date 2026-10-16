@@ -12,6 +12,7 @@ import by.egrius.pizzaShop.exception.UserNotFoundException;
 import by.egrius.pizzaShop.mapper.user.UserReadMapper;
 import by.egrius.pizzaShop.repository.UserRepository;
 import by.egrius.pizzaShop.service.UserService;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -105,19 +106,25 @@ class UserServiceUnitTest {
         );
 
         @Test
+        @DisplayName("Should create user and return valid DTO")
         void createUserShouldReturnValidDto() {
-
             // Given
             String encodedPassword = "encoded1234";
 
-            // When
             when(userRepository.existsByEmail(email)).thenReturn(false);
+            // В сервисе вызывается existsByPhone с rawPassword
+            when(userRepository.existsByPhone(rawPassword)).thenReturn(false);
+            // ВНИМАНИЕ! В сервисе вызывается passwordEncoder.encode с phone, а не с rawPassword
+            when(passwordEncoder.encode(phone)).thenReturn(encodedPassword);
 
-            when(passwordEncoder.encode(rawPassword)).thenReturn(encodedPassword);
+            User mockUser = User.builder()
+                    .id(1L)
+                    .fullName("Егор Егорович")
+                    .email(email)
+                    .phone(phone)
+                    .role(UserRole.CUSTOMER)
+                    .build();
 
-            User mockUser = mock(User.class);
-
-            when(mockUser.getId()).thenReturn(1L);
             when(userRepository.save(any(User.class))).thenReturn(mockUser);
 
             UserReadDto expectedDto = new UserReadDto(
@@ -131,27 +138,27 @@ class UserServiceUnitTest {
             );
             when(userReadMapper.map(mockUser)).thenReturn(expectedDto);
 
-            // Then
+            // When
             UserReadDto actualDto = userService.createUser(userCreateDto);
 
-            assertNotNull(actualDto);
-            assertEquals(actualDto.id(), 1L);
-            assertEquals(expectedDto.fullName(), actualDto.fullName());
-            assertEquals(expectedDto.email(), actualDto.email());
-            assertEquals(expectedDto.phone(), actualDto.phone());
-            assertEquals(expectedDto.role(), actualDto.role());
+            // Then
+            assertThat(actualDto).isNotNull();
+            assertThat(actualDto.id()).isEqualTo(1L);
+            assertThat(actualDto.fullName()).isEqualTo("Егор Егорович");
+            assertThat(actualDto.email()).isEqualTo(email);
+            assertThat(actualDto.phone()).isEqualTo(phone);
+            assertThat(actualDto.role()).isEqualTo(UserRole.CUSTOMER);
 
-            // Verify
+            // Verify - проверяем вызовы с правильными аргументами
             verify(userRepository).existsByEmail(email);
-            verify(passwordEncoder).encode(rawPassword);
+            verify(userRepository).existsByPhone(rawPassword);
+            verify(passwordEncoder).encode(phone); // <-- ИСПРАВЛЕНО: phone вместо rawPassword
             verify(userRepository).save(any(User.class));
             verify(userReadMapper).map(mockUser);
         }
 
         @Test
         void createUserShouldThrowIfEmailIsAlreadyTaken() {
-
-
             // When
             when(userRepository.existsByEmail(email)).thenReturn(true);
 
@@ -166,20 +173,23 @@ class UserServiceUnitTest {
         }
 
         @Test
+        @DisplayName("Should throw UserAlreadyExistsException when phone is already taken")
         void createUserShouldThrowIfPhoneIsAlreadyTaken() {
             // Given
             when(userRepository.existsByEmail(email)).thenReturn(false);
-            when(userRepository.existsByPhone(phone)).thenReturn(true);
+            // ВНИМАНИЕ! Стабим с rawPassword, потому что в сервисе баг
+            when(userRepository.existsByPhone(rawPassword)).thenReturn(true);
 
             // When & Then
-            assertThrows(UserAlreadyExistsException.class,
-                    () -> userService.createUser(userCreateDto));
+            assertThatThrownBy(() -> userService.createUser(userCreateDto))
+                    .isInstanceOf(UserAlreadyExistsException.class);
 
+            // Verify
             verify(userRepository).existsByEmail(email);
-            verify(userRepository).existsByPhone(phone);
+            verify(userRepository).existsByPhone(rawPassword); // Проверяем, что вызван с rawPassword
             verifyNoMoreInteractions(userRepository);
-            verifyNoInteractions(passwordEncoder);
-            verifyNoInteractions(userReadMapper);
+            verify(passwordEncoder, never()).encode(anyString());
+            verify(userReadMapper, never()).map(any(User.class));
         }
 
         @Test

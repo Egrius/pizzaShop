@@ -5,8 +5,17 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.cache.RedisCacheWriter;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.*;
+import tools.jackson.databind.DefaultTyping;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import tools.jackson.databind.jsontype.PolymorphicTypeValidator;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -17,28 +26,76 @@ import java.util.Map;
 public class RedisConfig {
 
     @Bean
-    public RedisCacheManager cacheManager(RedisConnectionFactory redisConnectionFactory) {
+    public RedisConnectionFactory lettuceConnectionFactory() {
+        return new LettuceConnectionFactory(new RedisStandaloneConfiguration("localhost", 6379));
+    }
 
-        RedisSerializer<Object> jsonSerializer = RedisSerializer.json();
+    private ObjectMapper objectMapper() {
+        PolymorphicTypeValidator ptv = BasicPolymorphicTypeValidator.builder()
+                .allowIfSubType("by.egrius.pizzaShop.dto.")
+                .allowIfSubType("java.util.")
+                .allowIfSubType("java.math.")
+                .allowIfSubType("java.lang.")
+                .allowIfSubType("java.time.")
+                .build();
 
-        Map<String, RedisCacheConfiguration> cacheConfigs = new HashMap<>();
+        return JsonMapper.builder()
+                .activateDefaultTyping(ptv, DefaultTyping.NON_FINAL)
+                .build();
+    }
 
-        cacheConfigs.put("pizzaCardDetails",
-                RedisCacheConfiguration.defaultCacheConfig()
-                        .entryTtl(Duration.ofHours(1))
-                        .disableCachingNullValues()
-                        .serializeValuesWith(RedisSerializationContext.SerializationPair
-                                .fromSerializer(jsonSerializer)));
+    @Bean
+    RedisTemplate<String, String> redisTemplate(RedisConnectionFactory connectionFactory) {
 
-        return RedisCacheManager.builder(redisConnectionFactory)
-                .withInitialCacheConfigurations(cacheConfigs)
-                .cacheDefaults(RedisCacheConfiguration.defaultCacheConfig()
-                        .entryTtl(Duration.ofMinutes(10))
-                        .disableCachingNullValues()
-                        .serializeKeysWith(RedisSerializationContext.SerializationPair
-                                .fromSerializer(new StringRedisSerializer()))
-                        .serializeValuesWith(RedisSerializationContext.SerializationPair
-                                .fromSerializer(jsonSerializer)))
+        RedisTemplate<String, String> template = new RedisTemplate<>();
+        template.setConnectionFactory(connectionFactory);
+
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setHashKeySerializer(new StringRedisSerializer());
+//
+//        JacksonJsonRedisSerializer<Object> jsonSerializer =
+//                new JacksonJsonRedisSerializer<>(objectMapper(), Object.class);
+
+        GenericJacksonJsonRedisSerializer jsonSerializer =
+                new GenericJacksonJsonRedisSerializer(objectMapper());
+
+        template.setValueSerializer(jsonSerializer);
+        template.setHashValueSerializer(jsonSerializer);
+
+        return template;
+    }
+
+    @Bean
+    public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+
+        GenericJacksonJsonRedisSerializer jsonSerializer =
+                new GenericJacksonJsonRedisSerializer(objectMapper());
+
+        RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
+                .entryTtl(Duration.ofMinutes(10))
+                .serializeValuesWith(
+                        RedisSerializationContext.SerializationPair.fromSerializer(
+                                jsonSerializer
+                        )
+                )
+                .disableCachingNullValues();
+
+        RedisCacheConfiguration cartConfig = RedisCacheConfiguration.defaultCacheConfig()
+                .entryTtl(Duration.ofMinutes(10))
+                .serializeValuesWith(
+                        RedisSerializationContext.SerializationPair.fromSerializer(
+                                jsonSerializer
+                        )
+                )
+                .disableCachingNullValues();
+
+        return RedisCacheManager.builder()
+                .cacheWriter(RedisCacheWriter.nonLockingRedisCacheWriter(connectionFactory))
+                .withInitialCacheConfigurations(Map.of(
+                        "cart", cartConfig
+                        )
+                )
+                .cacheDefaults(defaultConfig)
                 .build();
     }
 }

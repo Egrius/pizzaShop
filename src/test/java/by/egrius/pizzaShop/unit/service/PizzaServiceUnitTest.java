@@ -5,6 +5,7 @@ import by.egrius.pizzaShop.dto.pizza_size.PizzaSizeInfoDto;
 import by.egrius.pizzaShop.dto.size_template.SizeTemplateInfoDto;
 import by.egrius.pizzaShop.entity.*;
 import by.egrius.pizzaShop.exception.PizzaAlreadyExistsException;
+import by.egrius.pizzaShop.exception.PizzaNotFoundException;
 import by.egrius.pizzaShop.mapper.pizza.PizzaCreateMapper;
 import by.egrius.pizzaShop.mapper.pizza.PizzaReadMapper;
 import by.egrius.pizzaShop.mapper.pizza.PizzaUpdateMapper;
@@ -247,7 +248,7 @@ class PizzaServiceUnitTest {
                 pizzaService.getPizzaDetails(nonExistentId);
             });
 
-            assertEquals("Пицца не найдена в бд", exception.getMessage());
+            assertEquals("Пицца с ID - 999 не найдена в бд", exception.getMessage()); // Исправлено сообщение
         }
 
         @Test
@@ -333,7 +334,6 @@ class PizzaServiceUnitTest {
 
         @Test
         void shouldCreatePizzaAndReturnDto_whenCorrectData() {
-
             PizzaCreateDto dto = new PizzaCreateDto(
                     "Маргарита",
                     "Классическая пицца",
@@ -351,9 +351,15 @@ class PizzaServiceUnitTest {
 
             SizeTemplate mockSizeTemplate = Mockito.mock(SizeTemplate.class);
 
-            Pizza mockPizza = Mockito.mock(Pizza.class);
-            when(mockPizza.getPizzaIngredients()).thenReturn(Collections.emptySet());
-            when(mockPizza.getPizzaSizes()).thenReturn(Collections.emptySet());
+            // Создаем реальный Pizza объект, а не мок
+            Pizza pizza = Pizza.create(
+                    "Маргарита",
+                    "Классическая пицца",
+                    "/images/margherita.jpg",
+                    "Классические",
+                    true,
+                    15
+            );
 
             PizzaReadDto expectedDto = new PizzaReadDto(
                     1L, "Маргарита", "Классическая пицца",
@@ -366,8 +372,9 @@ class PizzaServiceUnitTest {
             when(ingredientRepository.findAllById(Set.of(1L))).thenReturn(List.of(mockIngredient));
             when(sizeTemplateRepository.findAllById(Set.of(1L))).thenReturn(List.of(mockSizeTemplate));
 
-            when(pizzaCreateMapper.map(dto)).thenReturn(mockPizza);
-            when(pizzaReadMapper.map(mockPizza)).thenReturn(expectedDto);
+            when(pizzaCreateMapper.map(dto)).thenReturn(pizza); // Возвращаем реальный объект
+            when(pizzaRepository.save(any(Pizza.class))).thenReturn(pizza); // Сохраняем реальный объект
+            when(pizzaReadMapper.map(pizza)).thenReturn(expectedDto);
 
             when(priceCalculator.calculatePrice(
                     any(SizeTemplate.class),
@@ -380,7 +387,7 @@ class PizzaServiceUnitTest {
             assertNotNull(actualDto);
             assertEquals("Маргарита", actualDto.name());
 
-            verify(pizzaRepository, times(1)).save(mockPizza);
+            verify(pizzaRepository, times(1)).save(any(Pizza.class));
         }
 
         @Test
@@ -440,6 +447,7 @@ class PizzaServiceUnitTest {
 
     @Nested
     class UpdatePizzaTests {
+
         @Test
         void shouldUpdate_ifDataIsCorrect() {
             Long idToUpdate = 1L;
@@ -453,40 +461,57 @@ class PizzaServiceUnitTest {
                     20
             );
 
-            Pizza mockPizzaToUpdate = Mockito.mock(Pizza.class);
-
-            when(pizzaRepository.findById(idToUpdate)).thenReturn(Optional.of(mockPizzaToUpdate));
-
-            when(pizzaUpdateMapper.map(updateDto, mockPizzaToUpdate)).thenReturn(mockPizzaToUpdate);
-
-            when(pizzaRepository.save(mockPizzaToUpdate)).thenReturn(mockPizzaToUpdate);
-
-            PizzaReadDto expectedReadDto = new PizzaReadDto(
-                    idToUpdate,
-                    updateDto.name(),
-                    updateDto.description(),
-                    updateDto.imageUrl(),
-                    updateDto.category(),
-                    updateDto.available(),
-                    updateDto.cookingTimeMinutes(),
-                    LocalDateTime.now(),
-                    List.of(),
-                    List.of()
+            // Создаем реальный объект Pizza
+            Pizza pizzaToUpdate = Pizza.create(
+                    "Маргарита",
+                    "Классическая пицца",
+                    "/images/margherita.jpg",
+                    "Классические",
+                    true,
+                    15
             );
 
-            when(pizzaReadMapper.map(mockPizzaToUpdate)).thenReturn(expectedReadDto);
+            // Используем spy для мокирования getId()
+            Pizza spyPizza = spy(pizzaToUpdate);
+            when(spyPizza.getId()).thenReturn(idToUpdate);
 
+            when(pizzaRepository.findById(idToUpdate)).thenReturn(Optional.of(spyPizza));
+            when(pizzaRepository.existsByName(updateDto.name())).thenReturn(false);
+
+            // Настраиваем маппер - обновляем все поля
+            doAnswer(invocation -> {
+                PizzaUpdateDto dto = invocation.getArgument(0);
+                Pizza entity = invocation.getArgument(1);
+                entity.setName(dto.name());
+                entity.setDescription(dto.description());
+                entity.setImageUrl(dto.imageUrl());
+                entity.setCategory(dto.category());
+                entity.setAvailable(dto.available());
+                entity.setCookingTimeMinutes(dto.cookingTimeMinutes());
+                return entity;
+            }).when(pizzaUpdateMapper).map(updateDto, spyPizza);
+
+            when(pizzaRepository.save(spyPizza)).thenReturn(spyPizza);
+
+            // When
             PizzaUpdateResponseDto actualResult = pizzaService.updatePizzaById(idToUpdate, updateDto);
 
-            assertEquals(actualResult.name(), expectedReadDto.name());
-            assertEquals(actualResult.category(), expectedReadDto.category());
-            assertEquals(actualResult.description(), expectedReadDto.description());
-            assertEquals(actualResult.cookingTimeMinutes(), expectedReadDto.cookingTimeMinutes());
+            // Then
+            assertNotNull(actualResult);
+            assertEquals(idToUpdate, actualResult.id());
+            assertEquals(updateDto.name(), actualResult.name());
+            assertEquals(updateDto.category(), actualResult.category());
+            assertEquals(updateDto.description(), actualResult.description());
+            assertEquals(updateDto.cookingTimeMinutes(), actualResult.cookingTimeMinutes());
+            assertEquals(updateDto.imageUrl(), actualResult.imageUrl());
+            assertEquals(updateDto.available(), actualResult.isAvailable());
 
-            verify(pizzaRepository).save(mockPizzaToUpdate);
             verify(pizzaRepository).findById(idToUpdate);
-            verify(pizzaUpdateMapper).map(updateDto, mockPizzaToUpdate);
-            verify(pizzaReadMapper).map(mockPizzaToUpdate);
+            verify(pizzaRepository).existsByName(updateDto.name());
+            verify(pizzaUpdateMapper).map(updateDto, spyPizza);
+            verify(pizzaRepository).save(spyPizza);
+            // Убираем verify для pizzaReadMapper - он не используется в сервисе!
+            // verify(pizzaReadMapper, never()).map(any());
         }
 
         @Test
@@ -505,7 +530,7 @@ class PizzaServiceUnitTest {
             String nameBefore = "Маргарита";
             String descriptionBefore = "Классическая пицца";
 
-            Pizza PizzaToUpdate = Pizza.create(
+            Pizza pizzaToUpdate = Pizza.create(
                     nameBefore,
                     descriptionBefore,
                     "/images/margherita.jpg",
@@ -514,47 +539,49 @@ class PizzaServiceUnitTest {
                     12
             );
 
-            when(pizzaRepository.findById(idToUpdate)).thenReturn(Optional.of(PizzaToUpdate));
+            Pizza spyPizza = spy(pizzaToUpdate);
+            when(spyPizza.getId()).thenReturn(idToUpdate);
 
-            when(pizzaUpdateMapper.map(updateDto, PizzaToUpdate)).thenReturn(PizzaToUpdate);
+            when(pizzaRepository.findById(idToUpdate)).thenReturn(Optional.of(spyPizza));
+            when(pizzaRepository.existsByName(updateDto.name())).thenReturn(false);
 
-            when(pizzaRepository.save(PizzaToUpdate)).thenReturn(PizzaToUpdate);
+            // Настраиваем маппер - обновляем только name и description
+            doAnswer(invocation -> {
+                PizzaUpdateDto dto = invocation.getArgument(0);
+                Pizza entity = invocation.getArgument(1);
+                if (dto.name() != null) entity.setName(dto.name());
+                if (dto.description() != null) entity.setDescription(dto.description());
+                // Остальные поля не обновляем
+                return entity;
+            }).when(pizzaUpdateMapper).map(updateDto, spyPizza);
 
-            PizzaReadDto expectedReadDto = new PizzaReadDto(
-                    idToUpdate,
-                    updateDto.name(),
-                    updateDto.description(),
-                    PizzaToUpdate.getImageUrl(),
-                    PizzaToUpdate.getCategory(),
-                    PizzaToUpdate.isAvailable(),
-                    PizzaToUpdate.getCookingTimeMinutes(),
-                    LocalDateTime.now(),
-                    List.of(),
-                    List.of()
-            );
+            when(pizzaRepository.save(spyPizza)).thenReturn(spyPizza);
 
-            when(pizzaReadMapper.map(PizzaToUpdate)).thenReturn(expectedReadDto);
-
+            // When
             PizzaUpdateResponseDto actualResult = pizzaService.updatePizzaById(idToUpdate, updateDto);
 
+            // Then
+            assertNotNull(actualResult);
+            assertNotNull(actualResult.id());
             assertEquals(idToUpdate, actualResult.id());
-            assertEquals(actualResult.name(), expectedReadDto.name());
-            assertEquals(actualResult.description(), expectedReadDto.description());
-            assertEquals(actualResult.category(), expectedReadDto.category());
-            assertEquals(actualResult.cookingTimeMinutes(), expectedReadDto.cookingTimeMinutes());
 
-            assertEquals(PizzaToUpdate.getImageUrl(), actualResult.imageUrl());
-            assertEquals(PizzaToUpdate.getCategory(), actualResult.category());
-            assertEquals(PizzaToUpdate.isAvailable(), actualResult.isAvailable());
-            assertEquals(PizzaToUpdate.getCookingTimeMinutes(), actualResult.cookingTimeMinutes());
+            // Проверяем обновленные поля
+            assertEquals(updateDto.name(), actualResult.name());
+            assertEquals(updateDto.description(), actualResult.description());
+
+            // Проверяем, что остальные поля не изменились (взяты из pizzaToUpdate)
+            assertEquals(pizzaToUpdate.getImageUrl(), actualResult.imageUrl());
+            assertEquals(pizzaToUpdate.getCategory(), actualResult.category());
+            assertEquals(pizzaToUpdate.isAvailable(), actualResult.isAvailable());
+            assertEquals(pizzaToUpdate.getCookingTimeMinutes(), actualResult.cookingTimeMinutes());
 
             assertNotEquals(nameBefore, actualResult.name());
             assertNotEquals(descriptionBefore, actualResult.description());
 
             verify(pizzaRepository).findById(idToUpdate);
-            verify(pizzaUpdateMapper).map(updateDto, PizzaToUpdate);
-            verify(pizzaRepository).save(PizzaToUpdate);
-            verify(pizzaReadMapper).map(PizzaToUpdate);
+            verify(pizzaRepository).existsByName(updateDto.name());
+            verify(pizzaUpdateMapper).map(updateDto, spyPizza);
+            verify(pizzaRepository).save(spyPizza);
         }
 
         @Test
@@ -564,15 +591,12 @@ class PizzaServiceUnitTest {
             when(pizzaRepository.findById(idToFail)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> pizzaService.updatePizzaById(idToFail, mock(PizzaUpdateDto.class)))
-                    .isInstanceOf(EntityNotFoundException.class)
+                    .isInstanceOf(PizzaNotFoundException.class)
                     .hasMessageContaining("Пицца для обновления с id 99999 не найдена в БД");
 
             verify(pizzaUpdateMapper, never()).map(any());
             verify(pizzaRepository, never()).save(any());
-            verify(pizzaReadMapper, never()).map(any());
         }
-
-
     }
 
     @Nested

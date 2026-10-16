@@ -1,10 +1,11 @@
-package by.egrius.pizzaShop.controller.handler;
+package by.egrius.pizzaShop.exception.handler;
 
 import by.egrius.pizzaShop.controller.admin.AdminPizzaController;
 import by.egrius.pizzaShop.controller.customer.PublicPizzaController;
 import by.egrius.pizzaShop.dto.error.ExceptionDto;
 import by.egrius.pizzaShop.dto.error.ViolationDto;
 import by.egrius.pizzaShop.exception.PizzaAlreadyExistsException;
+import by.egrius.pizzaShop.exception.PizzaNotFoundException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -25,6 +26,18 @@ public class ExceptionHandlerPizzaControllerAdvice {
         return new ExceptionDto(
                 e.getMessage(),
                 HttpStatus.CONFLICT.value(),
+                request.getRequestURI(),
+                LocalDateTime.now()
+        );
+    }
+
+    @ExceptionHandler(PizzaNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public ExceptionDto onPizzaNotFound(HttpServletRequest request, Exception e) {
+        return new ExceptionDto(
+                e.getMessage(),
+                HttpStatus.NOT_FOUND.value(),
                 request.getRequestURI(),
                 LocalDateTime.now()
         );

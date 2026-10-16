@@ -1,10 +1,7 @@
 package by.egrius.pizzaShop.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -15,6 +12,8 @@ import java.util.Objects;
 @Entity
 @Getter
 @Setter
+@Builder
+@AllArgsConstructor
 @ToString(exclude = "pizzaIngredients")
 @NoArgsConstructor
 public class Ingredient {

@@ -1,4 +1,4 @@
-package by.egrius.pizzaShop.controller.handler;
+package by.egrius.pizzaShop.exception.handler;
 
 import by.egrius.pizzaShop.controller.customer.CartController;
 import by.egrius.pizzaShop.dto.error.ExceptionDto;

@@ -8,7 +8,6 @@ import by.egrius.pizzaShop.entity.Pizza;
 import by.egrius.pizzaShop.entity.PizzaSize;
 import by.egrius.pizzaShop.entity.User;
 import by.egrius.pizzaShop.exception.CartItemNotFoundException;
-import by.egrius.pizzaShop.exception.EmptyCartException;
 import by.egrius.pizzaShop.exception.PizzaNotFoundException;
 import by.egrius.pizzaShop.exception.PizzaSizeNotFoundException;
 import by.egrius.pizzaShop.mapper.cart_item.CartItemReadMapper;
@@ -34,6 +33,7 @@ public class CartService {
 
     private final CartItemReadMapper cartItemReadMapper;
 
+   // @Cacheable(value = "cart", key = "#user.id", unless = "#result.items().isEmpty()")
     public CartReadDto getCart(User user) {
         List<CartItem> items = cartItemRepository.findByUser(user);
 
@@ -49,9 +49,12 @@ public class CartService {
 
         return new CartReadDto(itemDtos, totalMoney);
     }
-
+//
+//    @CachePut(value = "cart", key = "#user.id")
     @Transactional
     public void addToCart(User user, CartItemCreateDto dto) {
+
+
         Pizza pizza = pizzaRepository.findById(dto.pizzaId())
                 .orElseThrow(() -> new PizzaNotFoundException("Не найдена пицца по id: " + dto.pizzaId()));
 
@@ -60,7 +63,7 @@ public class CartService {
 
         cartItemRepository.findByUserAndPizzaAndPizzaSize(user, pizza, size)
                 .ifPresentOrElse(
-                        existing -> existing.setQuantity(existing.getQuantity() + dto.quantity()),
+                        item ->  item.setQuantity(item.getQuantity() + dto.quantity()),
                         () -> createNewCartItem(user, pizza, size, dto.quantity())
                 );
     }
@@ -75,6 +78,7 @@ public class CartService {
         cartItemRepository.save(item);
     }
 
+  //  @CacheEvict(value = "cart", key = "#user.id")
     @Transactional
     public void updateQuantity(User user, Long itemId, Integer quantity) {
         CartItem item = cartItemRepository.findById(itemId)
@@ -88,6 +92,7 @@ public class CartService {
         }
     }
 
+   // @CacheEvict(value = "cart", key = "#user.id")
     @Transactional
     public void removeItem(User user, Long itemId) {
         int deleted = cartItemRepository.deleteByUserAndId(user, itemId);
@@ -96,6 +101,7 @@ public class CartService {
         }
     }
 
+ //   @CacheEvict(value = "cart", key = "#user.id")
     @Transactional
     public void clearCart(User user) {
         if(cartItemRepository.existsByUser(user)) {

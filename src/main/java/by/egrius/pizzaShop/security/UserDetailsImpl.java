@@ -49,6 +49,8 @@ public class UserDetailsImpl implements UserDetails {
 
     @Override
     public String getUsername() {
+
+        System.out.println("=== getName called: " + user.getEmail());
         return user.getEmail();
     }
 

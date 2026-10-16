@@ -48,8 +48,8 @@ class UserServiceIT extends TestContainerBase {
             UserCreateDto createDto = new UserCreateDto(
                     "Иван Иванов",
                     "ivan@test.com",
-                    "+375291234567",
-                    "password123"
+                    "password123",
+                    "+375291234567"
             );
 
             // When
@@ -74,8 +74,9 @@ class UserServiceIT extends TestContainerBase {
             UserCreateDto createDto = new UserCreateDto(
                     "Иван Иванов",
                     "ivan@test.com",
-                    "+375291234567",
-                    "password123"
+                    "password123",
+                    "+375291234567"
+
             );
 
             // When
@@ -92,8 +93,8 @@ class UserServiceIT extends TestContainerBase {
             UserCreateDto createDtoToFail = new UserCreateDto(
                     "Иван Иванов",
                     "ivan_2@test.com",
-                    "+375291234567",
-                    "password123"
+                    "password123",
+                    "+375291234567"
             );
 
             assertThatThrownBy(() -> userService.createUser(createDtoToFail))
@@ -108,8 +109,8 @@ class UserServiceIT extends TestContainerBase {
             UserCreateDto createDto = new UserCreateDto(
                     "Иван Иванов",
                     "ivan@test.com",
-                    "+375291234567",
-                    "password123"
+                    "password123",
+                    "+375291234567"
             );
 
             // When
@@ -150,8 +151,8 @@ class UserServiceIT extends TestContainerBase {
             UserCreateDto createDto = new UserCreateDto(
                     "Иван Иванов",
                     "ivan@test.com",
-                    "+375291234567",
-                    "password123"
+                    "password123",
+                    "+375291234567"
             );
 
             UserReadDto result = userService.createUser(createDto);
@@ -247,8 +248,8 @@ class UserServiceIT extends TestContainerBase {
             UserCreateDto createDto = new UserCreateDto(
                     "Иван Иванов",
                     "ivan@test.com",
-                    "+375291234567",
-                    "password123"
+                    "password123",
+                    "+375291234567"
             );
 
             UserReadDto result = userService.createUser(createDto);

@@ -42,6 +42,13 @@ public class SecurityConfig {
                             .requestMatchers("/v3/api-docs/**").permitAll()
                             .requestMatchers("/swagger-ui/**").permitAll()
                             .requestMatchers("/swagger-ui.html").permitAll()
+
+                            .requestMatchers("/ws").permitAll()
+                            .requestMatchers("/ws/**").permitAll()
+                            .requestMatchers("/ws-raw").permitAll()
+                            .requestMatchers("/ws-raw/**").permitAll()
+                            .requestMatchers("/socket.io").permitAll()
+                            .requestMatchers("/socket.io/**").permitAll()
                             .anyRequest().authenticated();
             })
                 .addFilterBefore(jwtTokenFilter(), UsernamePasswordAuthenticationFilter.class)
@@ -52,7 +59,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
-        corsConfiguration.setAllowedOrigins(List.of("http://localhost:3000")); // React сервер
+corsConfiguration.setAllowedOriginPatterns(List.of("*"));
         corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         corsConfiguration.setAllowedHeaders(List.of("*"));
         corsConfiguration.setAllowCredentials(true);

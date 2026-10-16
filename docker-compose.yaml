@@ -1,0 +1,48 @@
+services:
+  pizza-app:
+
+    build: .
+
+    ports:
+      - target: 8080
+        published: 8080
+
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/pizza_db
+      SPRING_DATASOURCE_USERNAME: pizza_user
+      SPRING_DATASOURCE_PASSWORD: pizza123
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: pizza_db
+      DB_USER: pizza_user
+      DB_PASSWORD: pizza123
+      SPRING_DOCKER_COMPOSE_ENABLED: "false"
+
+    networks:
+      - pizza-network
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:15-alpine
+
+    ports:
+      - "5432:5432"
+
+    environment:
+      POSTGRES_DB: pizza_db
+      POSTGRES_USER: pizza_user
+      POSTGRES_PASSWORD: pizza123
+
+    networks:
+      - pizza-network
+
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+networks:
+  pizza-network:
+    driver: bridge
+
+volumes:
+  pg_data:

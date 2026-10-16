@@ -20,5 +20,6 @@ public record OrderReadDto (
     String customerNotes,
     DeliveryType deliveryType,
     List<OrderItemReadDto> orderItemReadDtos,
-    LocalDateTime createdAt
+    LocalDateTime createdAt,
+    Integer maxTimeToWait
 ) { }

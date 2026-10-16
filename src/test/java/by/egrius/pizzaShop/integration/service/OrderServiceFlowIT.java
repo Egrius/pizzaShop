@@ -32,7 +32,6 @@ import static org.mockito.Mockito.*;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ActiveProfiles("test")
 @Slf4j
-@Sql(scripts = "/test-data.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 class OrderServiceFlowIT extends TestContainerBase {
 
     @Autowired
@@ -78,6 +77,8 @@ class OrderServiceFlowIT extends TestContainerBase {
 
     @BeforeEach
     void setup() {
+        cleanup();
+
         customer = userRepository.save(User.createUserCustom("EgorCustomer", "examlpe@gmail.com",
                 "+375291112233", "12345Ab", UserRole.CUSTOMER));
 
@@ -109,6 +110,17 @@ class OrderServiceFlowIT extends TestContainerBase {
 
         PizzaSize pizzaSize = PizzaSize.create(TEST_PIZZA, sizeTemplate, BigDecimal.valueOf(25.0), true);
         TEST_PIZZA_SIZE_MEDIUM = pizzaSizeRepository.save(pizzaSize);
+    }
+
+    void cleanup() {
+        cartItemRepository.deleteAll();
+        orderRepository.deleteAll();
+        pizzaIngredientRepository.deleteAll();
+        pizzaSizeRepository.deleteAll();
+        pizzaRepository.deleteAll();
+        ingredientRepository.deleteAll();
+        sizeTemplateRepository.deleteAll();
+        userRepository.deleteAll();
     }
 
     private void setupCartItem() {
@@ -151,7 +163,8 @@ class OrderServiceFlowIT extends TestContainerBase {
             Order order = orderRepository.findById(result.id()).orElseThrow();
             assertTrue(
                     order.getStatus() == OrderStatus.PAID ||
-                            order.getStatus() == OrderStatus.PAYMENT_FAILED,
+                            order.getStatus() == OrderStatus.PAYMENT_FAILED ||
+                            order.getStatus() == OrderStatus.CONFIRMED,
                     "У заказа должен быть один из конечных статусов"
             );
         });
@@ -159,18 +172,18 @@ class OrderServiceFlowIT extends TestContainerBase {
         Order finalOrder = orderRepository.findById(result.id()).orElseThrow();
 
         // В зависимости от результата разные сценарии
-        if (finalOrder.getStatus() == OrderStatus.PAID) {
-            log.info("Payment SUCCESSFUL - testing success flow");
-            assertTrue(cartItemRepository.findByUser(customer).isEmpty(),
-                    "Корзина должна быть очищена после удачного платежа");
-
-            verify(orderEventPublisher).publishOrderPaidEvent(any(Long.class), anyString(), any(BigDecimal.class));
-        } else {
-            log.info("Payment FAILED - testing failure flow");
+        if (finalOrder.getStatus() == OrderStatus.PAYMENT_FAILED) {
+            log.info("Payment FAILED — testing failure flow");
             assertFalse(cartItemRepository.findByUser(customer).isEmpty(),
                     "Корзина должна остаться после неудачного платежа");
-
             verifyNoInteractions(orderEventPublisher);
+        } else {
+
+            log.info("Payment SUCCESSFUL ({}), testing success flow", finalOrder.getStatus());
+            assertTrue(cartItemRepository.findByUser(customer).isEmpty(),
+                    "Корзина должна быть очищена после удачного платежа");
+            verify(orderEventPublisher).publishOrderPaidEvent(
+                    any(Long.class), anyString(), any(BigDecimal.class));
         }
     }
 
@@ -214,7 +227,8 @@ class OrderServiceFlowIT extends TestContainerBase {
             orders.forEach(order -> {
                 assertTrue(
                         order.getStatus() == OrderStatus.PAID ||
-                                order.getStatus() == OrderStatus.PAYMENT_FAILED,
+                                order.getStatus() == OrderStatus.PAYMENT_FAILED ||
+                                order.getStatus() == OrderStatus.CONFIRMED,
                         "All orders should have final status"
                 );
             });

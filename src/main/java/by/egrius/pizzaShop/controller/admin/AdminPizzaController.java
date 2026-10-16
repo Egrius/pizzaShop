@@ -5,6 +5,11 @@ import by.egrius.pizzaShop.dto.pizza.PizzaReadDto;
 import by.egrius.pizzaShop.dto.pizza.PizzaUpdateDto;
 import by.egrius.pizzaShop.dto.pizza.PizzaUpdateResponseDto;
 import by.egrius.pizzaShop.service.PizzaService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validator;
@@ -18,6 +23,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Set;
 
+@Tag(name = "Admin - Pizzas", description = "ADMIN only")
+@SecurityRequirement(name = "bearerAuth")
 @RestController
 @PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
@@ -27,6 +34,17 @@ public class AdminPizzaController {
     private final PizzaService pizzaService;
     private final Validator validator;
 
+    @Operation(
+            summary = "Create pizza",
+            description = "Ingredients and sizes must be non-empty. Prices are calculated per size by PriceCalculator."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Pizza created"),
+            @ApiResponse(responseCode = "400", description = "Validation failed"),
+            @ApiResponse(responseCode = "403", description = "Not ADMIN"),
+            @ApiResponse(responseCode = "404", description = "Ingredient or size template not found"),
+            @ApiResponse(responseCode = "409", description = "Pizza with same name already exists")
+    })
     @PostMapping("/create")
     public ResponseEntity<PizzaReadDto> createPizza(@RequestBody PizzaCreateDto pizzaCreateDto) {
 
@@ -38,7 +56,14 @@ public class AdminPizzaController {
         PizzaReadDto pizzaReadDto = pizzaService.createPizza(pizzaCreateDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(pizzaReadDto);
     }
-    
+
+    @Operation(summary = "Update pizza", description = "Partial update — only non-null fields are applied.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Updated"),
+            @ApiResponse(responseCode = "400", description = "Validation failed"),
+            @ApiResponse(responseCode = "404", description = "Pizza not found"),
+            @ApiResponse(responseCode = "409", description = "Name conflict")
+    })
     @PutMapping("/{id}")
     public ResponseEntity<PizzaUpdateResponseDto> updatePizza(@PathVariable("id") @NotNull Long pizzaId,
                                                               @RequestBody PizzaUpdateDto pizzaUpdateDto) {
@@ -52,6 +77,14 @@ public class AdminPizzaController {
         return ResponseEntity.status(HttpStatus.OK).body(pizzaUpdateResponseDto);
     }
 
+    @Operation(
+            summary = "Delete pizza",
+            description = "Cascades to pizza_ingredients and pizza_sizes. Ingredients and size templates are left intact."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Deleted"),
+            @ApiResponse(responseCode = "404", description = "Pizza not found")
+    })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePizza(@PathVariable("id") @NotNull Long pizzaId) {
         pizzaService.deletePizzaById(pizzaId);

@@ -11,6 +11,8 @@ import java.util.Objects;
 @Table(name = "users")
 @Getter
 @Setter(AccessLevel.PROTECTED)
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor
 @ToString
 @Entity

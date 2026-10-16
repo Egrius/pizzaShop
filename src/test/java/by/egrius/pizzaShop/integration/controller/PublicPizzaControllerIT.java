@@ -112,38 +112,39 @@ class PublicPizzaControllerIT extends TestContainerBase {
 
     @Nested
     class GetPizzaCardDetailsTests {
+        private Long margheritaId;
+
         @BeforeEach
         void setUp() {
             pizzaRepository.deleteAll();
 
-            List<Pizza> pizzas = List.of(
-                    Pizza.create(
-                            "Маргарита",
-                            "Классическая пицца",
-                            "Классические",
-                            "/images/margherita.jpg",
-                            true,
-                            15
-                    ),
-                    Pizza.create(
-                            "Пицца_2",
-                            "Классическая пицца_2",
-                            "Классические",
-                            "/images/margherita.jpg",
-                            true,
-                            15
-                    )
-            );
-            pizzaRepository.saveAll(pizzas);
+            margheritaId =  pizzaRepository.save(Pizza.create(
+                    "Маргарита",
+                    "Классическая пицца",
+                    "Классические",
+                    "/images/margherita.jpg",
+                    true,
+                    15
+            )).getId();
+
+            pizzaRepository.save(Pizza.create(
+                    "Пицца_2",
+                    "Классическая пицца_2",
+                    "Классические",
+                    "/images/margherita.jpg",
+                    true,
+                    15
+            ));
+
         }
 
         @Test
         void shouldBe200_whenIdFound()  throws Exception {
-            long id = 1L;
-            mockMvc.perform(get("/api/pizzas/details/" + id))
+
+            mockMvc.perform(get("/api/pizzas/details/" + margheritaId))
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(jsonPath("$.id").value(id))
+                    .andExpect(jsonPath("$.id").value(margheritaId))
                     .andExpect(jsonPath("$.name").value("Маргарита"))
                     .andExpect(jsonPath("$.description").value("Классическая пицца"))
                     .andExpect(jsonPath("$.imageUrl").value("/images/margherita.jpg"))

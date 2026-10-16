@@ -12,7 +12,38 @@ public class PizzaShopApplication {
 	}
 }
 
-// TODO Контроллер для шаблонов размеров
-// TODO Система заказов
 // TODO оптимизация запросов, кэш
-// TODO Система отзывов
+
+/*
+services:
+  pizza-app:
+    build: .
+    ports:
+      - target: 8080
+        published: 8080
+    environment:
+      DB_HOST:
+      DB_PORT: 5432
+      DB_NAME: pizza_db
+      DB_USER: pizza_user
+      DB_PASSWORD: pizza123
+
+    depends_on:
+      - postgres
+        redis
+
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_USER: pizzaUser
+      POSTGRES_PASSWORD: pizza123
+
+  redis:
+    image: redis
+
+    environment:
+      REDIS_HOST:
+      REDIS_PORT:
+
+networks:
+ */

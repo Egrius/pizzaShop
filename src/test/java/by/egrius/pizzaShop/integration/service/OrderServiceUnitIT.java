@@ -10,6 +10,7 @@ import by.egrius.pizzaShop.payment_imitation.PaymentDetails;
 import by.egrius.pizzaShop.payment_imitation.PaymentResponseDto;
 import by.egrius.pizzaShop.payment_imitation.PaymentService;
 import by.egrius.pizzaShop.repository.*;
+import by.egrius.pizzaShop.service.KitchenService;
 import by.egrius.pizzaShop.service.OrderService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,7 +38,6 @@ import static org.mockito.Mockito.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ActiveProfiles("test")
-@Sql(scripts = "/test-data.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 public class OrderServiceUnitIT extends TestContainerBase {
     @Autowired
     private OrderService orderService;
@@ -72,6 +72,9 @@ public class OrderServiceUnitIT extends TestContainerBase {
     @MockitoBean
     private PaymentService paymentService;
 
+    @MockitoBean
+    private KitchenService kitchenService;
+
     private User customer;
     private User customer2;
 
@@ -83,6 +86,8 @@ public class OrderServiceUnitIT extends TestContainerBase {
 
     @BeforeEach
     void setup() {
+        cleanup();
+
         customer = userRepository.save(User.createUserCustom("EgorCustomer", "examlpe@gmail.com",
                 "+375291112233", "12345Ab", UserRole.CUSTOMER));
 
@@ -119,6 +124,17 @@ public class OrderServiceUnitIT extends TestContainerBase {
 
         PizzaSize pizzaSize = PizzaSize.create(TEST_PIZZA, sizeTemplate, BigDecimal.valueOf(25.0), true);
         TEST_PIZZA_SIZE_MEDIUM = pizzaSizeRepository.save(pizzaSize);
+    }
+
+    void cleanup() {
+        cartItemRepository.deleteAll();
+        orderRepository.deleteAll();
+        pizzaIngredientRepository.deleteAll();
+        pizzaSizeRepository.deleteAll();
+        pizzaRepository.deleteAll();
+        ingredientRepository.deleteAll();
+        sizeTemplateRepository.deleteAll();
+        userRepository.deleteAll();
     }
 
     private void setupCartItem() {

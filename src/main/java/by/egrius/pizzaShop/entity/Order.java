@@ -63,6 +63,12 @@ public class Order {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "started_cooking_at")
+    private LocalDateTime startedCookingAt;
+
+    @Column(name = "max_time_to_wait")
+    private Integer maxTimeToWait;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

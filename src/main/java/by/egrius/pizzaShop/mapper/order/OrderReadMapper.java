@@ -27,7 +27,8 @@ public class OrderReadMapper implements BaseMapper<Order, OrderReadDto> {
                 object.getCustomerNotes(),
                 object.getDeliveryType(),
                 object.getOrderItemList().stream().map(orderItemReadMapper::map).toList(),
-                object.getCreatedAt()
+                object.getCreatedAt(),
+                object.getMaxTimeToWait()
         );
     }
 }

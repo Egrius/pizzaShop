@@ -24,9 +24,6 @@ public class PizzaPriceRecalculationService {
     private final PizzaRepository pizzaRepository;
     private final PriceCalculator priceCalculator;
 
-    @PersistenceContext
-    private EntityManager entityManager;
-
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recalculatePricesForIngredient(Long ingredientId) {
         log.info("Перерасчет цен для пицц, содержащих ингредиент ID: {}", ingredientId);

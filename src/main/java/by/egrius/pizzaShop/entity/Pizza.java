@@ -43,10 +43,10 @@ public class Pizza {
     @Column(name = "created_at", updatable = false, insertable = false)
     private LocalDateTime createdAt;
 
-    @OneToMany(mappedBy = "pizza", cascade = CascadeType.PERSIST)
+    @OneToMany(mappedBy = "pizza", cascade = {CascadeType.PERSIST, CascadeType.REMOVE}, orphanRemoval = true)
     private Set<PizzaIngredient> pizzaIngredients = new HashSet<>();
 
-    @OneToMany(mappedBy = "pizza", cascade = CascadeType.PERSIST)
+    @OneToMany(mappedBy = "pizza", cascade = {CascadeType.PERSIST, CascadeType.REMOVE}, orphanRemoval = true)
     private Set<PizzaSize> pizzaSizes = new HashSet<>();
 
     @Version

@@ -112,7 +112,7 @@ public class PizzaService {
     }
 
     /**
-     * Возвращает полную информацию о пицце с кэшированием результата.
+     * Возвращает полную информацию о пицце
      *
      * @param id идентификатор пиццы в БД
      * @return {@link PizzaCardDetailsDto} с полной информацией о пицце
@@ -120,7 +120,7 @@ public class PizzaService {
      *
      * @see PizzaCardDetailsDto
      */
-    @Cacheable(value = "pizzaCardDetails", key = "#id")
+   // @Cacheable(value = "pizzaCardDetails", key = "#id")
     public PizzaCardDetailsDto getPizzaDetails(Long id) {
         log.info("Вызов getPizzaDetails с id={} (id==null? {})", id, id == null);
 
@@ -363,7 +363,7 @@ public class PizzaService {
      * @throws PizzaAlreadyExistsException если новое имя пиццы уже существует в БД
      */
     @Transactional
-    @CacheEvict(value = "pizzaCardDetails", key = "#id")
+   // @CacheEvict(value = "pizzaCardDetails", key = "#id")
     public PizzaUpdateResponseDto updatePizzaById(Long id, PizzaUpdateDto updateDto) {
 
         log.info("Передано DTO на обновление пиццы. Имя для обновления - \"{}\", id - {}", updateDto.name(), id);
@@ -395,7 +395,7 @@ public class PizzaService {
     }
 
     @Transactional
-    @CacheEvict(value = "pizzaCardDetails", key = "#pizzaId")
+  //  @CacheEvict(value = "pizzaCardDetails", key = "#pizzaId")
     public void deletePizzaById(Long id) {
         log.info("Передано id на удаление пиццы - {}", id);
 

@@ -9,6 +9,10 @@ import by.egrius.pizzaShop.entity.User;
 import by.egrius.pizzaShop.security.UserDetailsImpl;
 import by.egrius.pizzaShop.security.jwt.JwtUtils;
 import by.egrius.pizzaShop.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -24,6 +28,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "Auth", description = "Register, login, logout")
 @Slf4j
 @RestController
 @RequestMapping("/api/auth")
@@ -57,6 +62,11 @@ public class AuthController {
 
      */
 
+    @Operation(summary = "Login", description = "Returns a JWT on success.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Login successful"),
+            @ApiResponse(responseCode = "401", description = "Invalid credentials")
+    })
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody AuthRequest authRequest) {
 
@@ -92,6 +102,14 @@ public class AuthController {
         }
     }
 
+    @Operation(
+            summary = "Register new customer",
+            description = "Creates a CUSTOMER. Email and phone must be unique."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "User created"),
+            @ApiResponse(responseCode = "400", description = "Validation failed or user already exists")
+    })
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody @Valid UserCreateDto userCreateDto) {
         try {
@@ -112,6 +130,11 @@ public class AuthController {
         }
     }
 
+    @Operation(
+            summary = "Logout",
+            description = "Clears SecurityContext. JWT stays valid until expiry - no server-side blacklist."
+    )
+    @ApiResponse(responseCode = "200", description = "Logout successful")
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();

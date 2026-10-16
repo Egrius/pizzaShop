@@ -5,6 +5,7 @@ import by.egrius.pizzaShop.dto.pizza.*;
 import by.egrius.pizzaShop.dto.pizza_size.PizzaSizeInfoDto;
 import by.egrius.pizzaShop.dto.size_template.SizeTemplateInfoDto;
 import by.egrius.pizzaShop.entity.*;
+import by.egrius.pizzaShop.exception.PizzaNotFoundException;
 import by.egrius.pizzaShop.filter.PizzaFilter;
 import by.egrius.pizzaShop.integration.testcontainer.TestContainerBase;
 import by.egrius.pizzaShop.repository.*;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Slice;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
@@ -33,7 +35,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ActiveProfiles("test")
-@Sql(scripts = "/test-data.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 public class PizzaServiceIT extends TestContainerBase {
 
     @Autowired
@@ -48,11 +49,24 @@ public class PizzaServiceIT extends TestContainerBase {
     @Autowired
     SizeTemplateRepository sizeTemplateRepo;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    void cleanup() {
+        jdbcTemplate.execute("""
+        TRUNCATE TABLE pizza_ingredients, pizza_sizes, cart_items, pizzas, 
+                       ingredients, size_templates, reviews, order_items, orders 
+        RESTART IDENTITY CASCADE
+        """);
+    }
+
     @Nested
     class CreateTests {
 
         @BeforeEach
         void setUp() {
+
+            cleanup();
 
             ingredientRepository.save(Ingredient.create("Моцарелла", "...", new BigDecimal("6.64"), true));
             ingredientRepository.save(Ingredient.create("Цыплёнок", "...", new BigDecimal("10.0"), true));
@@ -61,6 +75,8 @@ public class PizzaServiceIT extends TestContainerBase {
             sizeTemplateRepo.save(SizeTemplate.create(PizzaSizeEnum.SMALL, "25см", 25, 450, new BigDecimal("0.8")));
             sizeTemplateRepo.save(SizeTemplate.create(PizzaSizeEnum.MEDIUM, "30см", 30, 650, BigDecimal.ONE));
         }
+
+
 
         @Test
         void shouldCreatePizzaWithAllData() {
@@ -103,6 +119,8 @@ public class PizzaServiceIT extends TestContainerBase {
 
         @BeforeEach
         void setup () {
+            cleanup();
+
             ingredientRepository.save(Ingredient.create("Моцарелла", "...", new BigDecimal("6.64"), true));
             ingredientRepository.save(Ingredient.create("Цыплёнок", "...", new BigDecimal("10.0"), true));
             ingredientRepository.save(Ingredient.create("Бекон", "...", new BigDecimal("1.60"), true));
@@ -183,6 +201,9 @@ public class PizzaServiceIT extends TestContainerBase {
 
         @BeforeEach
         void setup () {
+
+            cleanup();
+
             ingredientRepository.save(Ingredient.create("Моцарелла", "...", new BigDecimal("6.64"), true));
             ingredientRepository.save(Ingredient.create("Цыплёнок", "...", new BigDecimal("10.0"), true));
             ingredientRepository.save(Ingredient.create("Бекон", "...", new BigDecimal("1.60"), true));
@@ -296,6 +317,9 @@ public class PizzaServiceIT extends TestContainerBase {
 
         @BeforeEach
         void setUp() {
+
+            cleanup();
+
             // Создаем тестовые данные
             ingredientRepository.save(Ingredient.create("Моцарелла", "...", new BigDecimal("25.00"), true));
             ingredientRepository.save(Ingredient.create("Помидоры", "...", new BigDecimal("12.00"), true));
@@ -415,6 +439,9 @@ public class PizzaServiceIT extends TestContainerBase {
 
         @BeforeEach
         void setUp() {
+
+            cleanup();
+
             // Создаем тестовые данные
             ingredientRepository.save(Ingredient.create("Моцарелла", "...", new BigDecimal("25.00"), true));
             ingredientRepository.save(Ingredient.create("Помидоры", "...", new BigDecimal("12.00"), true));
@@ -470,8 +497,8 @@ public class PizzaServiceIT extends TestContainerBase {
             PizzaUpdateDto updateDto = new PizzaUpdateDto("Новое имя", "Описание", "/img.jpg", "Категория", true, 20
             );
 
-            EntityNotFoundException exception = assertThrows(
-                    EntityNotFoundException.class,
+            PizzaNotFoundException exception = assertThrows(
+                    PizzaNotFoundException.class,
                     () -> pizzaService.updatePizzaById(nonExistentId, updateDto)
             );
 
@@ -587,6 +614,9 @@ public class PizzaServiceIT extends TestContainerBase {
 
         @BeforeEach
         void setUp() {
+
+            cleanup();
+
             // Создаем тестовые данные
             ingredientRepository.save(Ingredient.create("Моцарелла", "...", new BigDecimal("25.00"), true));
             ingredientRepository.save(Ingredient.create("Помидоры", "...", new BigDecimal("12.00"), true));
@@ -612,9 +642,9 @@ public class PizzaServiceIT extends TestContainerBase {
 
         @Test
         void shouldDeletePizzaDespiteIngredients_whenPizzaFound() {
-            pizzaService.deletePizzaById(1L);
+            pizzaService.deletePizzaById(createdPizzaId);
 
-            assertFalse(pizzaRepository.findById(1L).isPresent());
+            assertFalse(pizzaRepository.findById(createdPizzaId).isPresent());
 
             Optional<Ingredient> ingredient1 = ingredientRepository.findById(1L);
             assertTrue(ingredient1.isPresent());

@@ -177,6 +177,8 @@ class IngredientServiceIT extends TestContainerBase {
         @Autowired
         PizzaService pizzaService;
 
+        private Long pizzaId;
+
         @BeforeEach
         void setup() {
             ingredientRepository.save(Ingredient.create("Сыр", "Вкусный сыр", new BigDecimal("10.0"), true));
@@ -189,7 +191,7 @@ class IngredientServiceIT extends TestContainerBase {
             sizeTemplateRepository.save(SizeTemplate.create(PizzaSizeEnum.MEDIUM, PizzaSizeEnum.MEDIUM.getAbbreviation(), 30, 650, BigDecimal.ONE));
             sizeTemplateRepository.save(SizeTemplate.create(PizzaSizeEnum.LARGE, PizzaSizeEnum.LARGE.getAbbreviation(), 35, 700, BigDecimal.ONE));
 
-            pizzaService.createPizza(new PizzaCreateDto(
+            pizzaId = pizzaService.createPizza(new PizzaCreateDto(
                     "Маргарита",
                     "Классическая пицца",
                     "/images/margherita.jpg",
@@ -198,7 +200,7 @@ class IngredientServiceIT extends TestContainerBase {
                     15,
                     Map.of(1L, 200, 2L, 250, 3L, 40), // ingredientId → weightGrams
                     Set.of(1L, 2L, 3L)
-            ));
+            )).id();
         }
 
         @Test
@@ -218,7 +220,7 @@ class IngredientServiceIT extends TestContainerBase {
             assertEquals(sameAfterUpdate.get().getPrice(), BigDecimal.valueOf(999.99));
             assertTrue(sameAfterUpdate.get().isAvailable());
 
-            List<PizzaIngredient> pizzaIngredientsList = pizzaIngredientRepository.findByPizzaId(1L);
+            List<PizzaIngredient> pizzaIngredientsList = pizzaIngredientRepository.findByPizzaId(pizzaId);
             assertFalse(pizzaIngredientsList.isEmpty());
 
             Long ingredientIdInPizza = pizzaIngredientsList.get(0).getIngredient().getId();
